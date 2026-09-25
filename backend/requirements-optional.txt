@@ -1,0 +1,3 @@
+# Optional extras (not installed on Vercel by default).
+# Store predictions in BigQuery (set GCP_PROJECT and BQ_DATASET):
+google-cloud-bigquery==3.45.2

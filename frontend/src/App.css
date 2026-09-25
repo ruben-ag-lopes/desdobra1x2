@@ -1,0 +1,395 @@
+* {
+  box-sizing: border-box;
+}
+
+/* Cores de cada jogo, amostradas dos logótipos em jogossantacasa.pt */
+.app {
+  --game-accent: #008058;
+  --game-accent-soft: #0e2a26;
+}
+
+.app[data-game="totobola"],
+.app[data-game="totobola_extra"] {
+  --game-accent: #008058;
+  --game-accent-soft: #0e2a26;
+}
+
+.app[data-game="totoloto"] {
+  --game-accent: #0088d0;
+  --game-accent-soft: #0f2a3f;
+}
+
+.app[data-game="euromilhoes"] {
+  --game-accent: #e8c850;
+  --game-accent-soft: #1d1f40;
+  --game-accent-text: #202058;
+}
+
+.app[data-game="eurodreams"] {
+  --game-accent: #7818a0;
+  --game-accent-soft: #24123a;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #0f1720;
+  color: #e6edf3;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+/* Overrides of the Vite starter styles in index.css (to be replaced by the redesign, docs/plano-design.md). */
+#root {
+  border-inline: none;
+}
+
+header h1 {
+  margin-bottom: 4px;
+  color: #e6edf3;
+  font-size: clamp(28px, 5vw, 40px);
+  letter-spacing: normal;
+}
+
+.disclaimer {
+  color: #9fb0c0;
+  font-size: 0.85rem;
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+/* Prominent disclaimer shown on every tab */
+.warning-banner {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border: 1px solid #f59e0b;
+  border-left-width: 6px;
+  border-radius: 8px;
+  background: #2b2110;
+  color: #fde7b0;
+  line-height: 1.5;
+}
+
+.warning-banner strong {
+  color: #fbbf24;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+  border-bottom: 1px solid #2a3a4a;
+  padding-bottom: 8px;
+}
+
+.tabs button {
+  background: transparent;
+  border: 1px solid #2a3a4a;
+  color: #e6edf3;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: var(--game-accent);
+  border-color: var(--game-accent);
+  color: var(--game-accent-text, #fff);
+}
+
+.tab-content h2 {
+  margin: 0;
+  color: var(--game-accent);
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.draw-info {
+  background: var(--game-accent-soft);
+  border-left: 4px solid var(--game-accent);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.hint {
+  color: #9fb0c0;
+  font-size: 0.85rem;
+}
+
+.match-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  background: #142033;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.match-row input {
+  flex: 1;
+  min-width: 120px;
+}
+
+input,
+button {
+  background: #1b2838;
+  color: #e6edf3;
+  border: 1px solid #2a3a4a;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--game-accent);
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.error {
+  color: #f87171;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+th,
+td {
+  border: 1px solid #2a3a4a;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.tickets {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tickets li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--game-accent-soft);
+  border-left: 4px solid var(--game-accent);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.match-number {
+  min-width: 1.5em;
+  text-align: right;
+  color: #9fb0c0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fix-toggle {
+  display: inline-flex;
+}
+
+.fix-toggle button {
+  border-radius: 0;
+  min-width: 2.2em;
+  font-weight: 700;
+}
+
+.fix-toggle button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.fix-toggle button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.fix-toggle button.active {
+  background: var(--game-accent);
+  border-color: var(--game-accent);
+  color: var(--game-accent-text, #fff);
+}
+
+.match-row.fixed {
+  border-left: 4px solid var(--game-accent);
+}
+
+.match-row.double {
+  border-left: 4px dashed var(--game-accent);
+}
+
+th.fixed,
+td.fixed,
+tr.fixed td {
+  background: var(--game-accent-soft);
+}
+
+/* Duplas: same tint as fixed games, striped so the two are told apart. */
+th.double,
+td.double,
+tr.double td {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--game-accent-soft) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+.low-confidence {
+  color: #fbbf24;
+}
+
+.result-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.link-button {
+  background: transparent;
+  border: none;
+  color: var(--game-accent);
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* Criteria pop-up */
+.criteria-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  background: #142033;
+  color: #e6edf3;
+  border: 1px solid var(--game-accent);
+  border-radius: 10px;
+  padding: 0 20px 20px;
+}
+
+.criteria-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.criteria-dialog header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #142033;
+  padding: 16px 0 8px;
+}
+
+.criteria-dialog h3,
+.criteria-dialog h4 {
+  margin: 0;
+}
+
+.criteria-dialog section {
+  border-top: 1px solid #2a3a4a;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.criteria-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.criterion-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.weight-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #1b2838;
+  margin-top: 4px;
+}
+
+.weight-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--game-accent);
+}
+
+.criteria-list .hint {
+  margin: 4px 0 0;
+}
+
+/* Footer with the support button */
+.site-footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid #2a3a4a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.site-footer .hint {
+  margin: 0;
+}
+
+.support {
+  position: relative;
+}
+
+.support-button {
+  background: var(--game-accent);
+  border-color: var(--game-accent);
+  color: var(--game-accent-text, #fff);
+  font-weight: 600;
+}
+
+.support-options {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  background: #1b2838;
+  border: 1px solid #2a3a4a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.support-options a {
+  color: #e6edf3;
+  text-decoration: none;
+  padding: 10px 14px;
+}
+
+.support-options a:hover {
+  background: var(--game-accent-soft);
+}
