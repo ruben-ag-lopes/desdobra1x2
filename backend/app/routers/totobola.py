@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 
 from app.cache import cdn_cache
-from app.models import CriterionInfo, DesdobramentoRequest, DesdobramentoResponse, Draw, FixtureInfo, ModelCriteria
+from app.models import DesdobramentoRequest, DesdobramentoResponse, Draw, FixtureInfo, ModelCriteria
 from app.scrapers import santacasa_calendar
 from app.services import criteria, totobola_engine
 from app.storage import bigquery
@@ -36,18 +36,7 @@ def desdobramento(req: DesdobramentoRequest, background: BackgroundTasks):
     if not req.matches:
         raise HTTPException(status_code=400, detail="No matches provided")
 
-    # Validate criteria multipliers
-    if req.criteria_multipliers:
-        from app.research.importance import CRITERIA
-        for crit_id, mult in req.criteria_multipliers.items():
-            if crit_id not in CRITERIA:
-                raise HTTPException(status_code=422, detail=f"Unknown criterion: {crit_id}")
-            if not 0 <= mult <= 2:
-                raise HTTPException(status_code=422, detail=f"Multiplier out of range [0, 2]: {crit_id}={mult}")
-
-    probabilities, apostas = totobola_engine.gerar_desdobramento(
-        req.matches, req.n_apostas, req.criteria_multipliers or None
-    )
+    probabilities, apostas = totobola_engine.gerar_desdobramento(req.matches, req.n_apostas, req.multiplicadores)
     background.add_task(bigquery.log_predictions, probabilities, req.concurso, req.data_sorteio)
     return DesdobramentoResponse(probabilities=probabilities, apostas=apostas)
 
@@ -62,13 +51,3 @@ def get_criterios(
     described = criteria.describe(versions)
     cdn_cache(response, 3600)
     return described
-
-
-@router.get("/criterios/customizar", response_model=list[CriterionInfo])
-def get_customizable_criteria():
-    """List of criteria that users can customize with multipliers [0, 2]."""
-    from app.research.importance import CRITERIA
-
-    return [
-        CriterionInfo(id=crit_id, label=info["label"]) for crit_id, info in CRITERIA.items()
-    ]

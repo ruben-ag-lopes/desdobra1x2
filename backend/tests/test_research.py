@@ -2,13 +2,16 @@
 
 import unittest
 from dataclasses import replace
+from typing import get_args
 from datetime import datetime, timedelta
 
 import numpy as np
 
+from app.models import CriterionId, DesdobramentoRequest
 from app.research import metrics
 from app.research.data import Match
 from app.research.features import build_rows, build_rows_and_state, fixture_rows
+from app.research.importance import CRITERIA, apply_multipliers, neutral_values
 from app.research.models import PoissonModel
 
 
@@ -87,3 +90,39 @@ class MetricsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MultipliersTest(unittest.TestCase):
+    def setUp(self):
+        matches = _synthetic_matches(n=1200)
+        rows, self.state = build_rows_and_state(matches)
+        train = rows.subset(rows.eligible.nonzero()[0])
+        self.model = PoissonModel()
+        self.model.fit(train)
+        self.neutral = neutral_values(train)
+        self.fixture = fixture_rows(self.state, [Match(matches[-1].date + timedelta(days=1), "T1", "T2", 0, 0)])
+
+    def predict(self, multipliers):
+        return self.model.predict(apply_multipliers(self.fixture, multipliers, self.neutral))[0]
+
+    def test_all_ones_is_exactly_the_default(self):
+        np.testing.assert_array_equal(self.predict({c: 1.0 for c in CRITERIA}), self.predict({}))
+
+    def test_zero_sets_the_neutral_value_and_two_doubles_the_gap(self):
+        for m in (0.0, 2.0):
+            scaled = apply_multipliers(self.fixture, {"ataque": m}, self.neutral)
+            for f in ("home_for", "away_for"):
+                gap = getattr(self.fixture, f) - self.neutral[f]
+                np.testing.assert_allclose(getattr(scaled, f) - self.neutral[f], m * gap)
+
+    def test_every_criterion_changes_a_single_fixture(self):
+        # The neutral value comes from training, not from the fixtures, so one fixture is enough.
+        for criterion in ("elo", "ataque", "defesa"):
+            self.assertFalse(np.allclose(self.predict({criterion: 0.0}), self.predict({})), criterion)
+
+    def test_api_accepts_only_known_criteria_in_range(self):
+        self.assertEqual(set(get_args(CriterionId)), set(CRITERIA))
+        DesdobramentoRequest(matches=[], n_apostas=1, multiplicadores={"elo": 2, "casa": 0})
+        for bad in ({"elo": 2.1}, {"elo": -0.1}, {"forma": 1}):
+            with self.assertRaises(ValueError):
+                DesdobramentoRequest(matches=[], n_apostas=1, multiplicadores=bad)

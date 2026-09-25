@@ -17,7 +17,7 @@ from typing import Callable
 from app.cache import TTLCache
 from app.research import data
 from app.research.features import MIN_PRIOR_GAMES, FeatureState, build_rows_and_state, fixture_rows
-from app.research.importance import apply_multipliers, criteria_weights
+from app.research.importance import apply_multipliers, criteria_weights, neutral_values
 from app.research.models import OrderedLogitElo, PoissonModel
 from app.scrapers.elo_ratings import _PT_TO_EN
 
@@ -163,7 +163,8 @@ class _Domain:
     matches: list[data.Match]
     model: object
     state: FeatureState  # after the last known result: features of new fixtures come from here
-    weights: dict[str, float]  # criterion -> share of influence
+    weights: dict[str, float]  # criterion id -> share of influence
+    neutral: dict[str, float]  # "no information" value per feature, for user-scaled criteria
     trained_at: datetime = field(default_factory=datetime.now)
 
 
@@ -189,8 +190,8 @@ def _domain(spec: DomainSpec) -> _Domain:
         eligible = rows.eligible.nonzero()[0]
         model = spec.make_model()
         model.fit(rows.subset(eligible))
-        weights = criteria_weights(model, rows.subset(eligible[-1000:]))  # recent games: today's influence
-        return _Domain(spec, matches, model, state, weights)
+        recent = rows.subset(eligible[-1000:])  # recent games: today's influence
+        return _Domain(spec, matches, model, state, criteria_weights(model, recent), neutral_values(recent))
 
     return _cache.get_or_set(f"domain:{spec.version}", train)
 
@@ -227,34 +228,22 @@ def _nation_alias(name: str) -> str | None:
 
 
 def _predict_fixtures(
-    domain: _Domain, fixtures: list[tuple[str, str]], criteria_multipliers: dict[str, float] | None = None
+    domain: _Domain, fixtures: list[tuple[str, str]], multipliers: dict[str, float] | None = None
 ) -> list[Probs]:
-    """Features come from the state after the last known result; fixtures never update it.
-
-    Args:
-        domain: trained model + state.
-        fixtures: list of (home, away) team indices.
-        criteria_multipliers: per-criterion multipliers [0, 2], e.g., {"elo": 1.5}.
-    """
+    """Features come from the state after the last known result; fixtures never update it."""
     now = datetime.now()
     upcoming = [data.Match(now, home, away, 0, 0) for home, away in fixtures]
-    rows = fixture_rows(domain.state, upcoming)
-
-    if criteria_multipliers:
-        rows = apply_multipliers(rows, criteria_multipliers)
-
+    rows = apply_multipliers(fixture_rows(domain.state, upcoming), multipliers or {}, domain.neutral)
     probs = domain.model.predict(rows)
     return [(float(p[0]), float(p[1]), float(p[2])) for p in probs]
 
 
 def predict_many(
-    pairs: list[tuple[str, str]], criteria_multipliers: dict[str, float] | None = None
+    pairs: list[tuple[str, str]], multipliers: dict[str, float] | None = None
 ) -> list[tuple[Probs, str] | None]:
     """For each (home, away): ((p_home, p_draw, p_away), model_version), or None if no domain knows both teams.
 
-    Args:
-        pairs: list of (home_team, away_team) names.
-        criteria_multipliers: per-criterion multipliers [0, 2], only applied to trained models.
+    `multipliers` ({criterion id: 0..2}) scale the criteria of the trained models; None keeps the defaults.
     """
     results: list[tuple[Probs, str] | None] = [None] * len(pairs)
     pending = list(range(len(pairs)))
@@ -283,7 +272,7 @@ def predict_many(
         domain = _safe(_domain, spec)
         if domain is None:
             continue
-        for i, probs in zip(known, _predict_fixtures(domain, list(known.values()), criteria_multipliers)):
+        for i, probs in zip(known, _predict_fixtures(domain, list(known.values()), multipliers)):
             results[i] = (probs, spec.version)
         pending = [i for i in pending if i not in known]
     return results

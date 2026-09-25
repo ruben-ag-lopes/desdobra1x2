@@ -1,6 +1,7 @@
 """Plain-language criteria and weights of each prediction model (shown in the app's pop-up)."""
 
 from app.models import Criterion, ModelCriteria
+from app.research.importance import CRITERIA
 from app.services import totobola_engine as engine
 from app.services import trained_model
 from app.services.elo_formula import ELO_HOME_ADVANTAGE
@@ -70,8 +71,8 @@ def _trained_criteria(version: str) -> ModelCriteria | None:
         return None
     text = _KIND_TEXT[info["kind"]]
     criterios = [
-        Criterion(nome=nome, peso=round(peso, 3))
-        for nome, peso in sorted(info["weights"].items(), key=lambda kv: -kv[1])
+        Criterion(id=criterion_id, nome=CRITERIA[criterion_id]["label"], peso=round(peso, 3))
+        for criterion_id, peso in sorted(info["weights"].items(), key=lambda kv: -kv[1])
     ]
     periodo = f"{info['data_from']:%m/%Y} a {info['data_to']:%d/%m/%Y}"
     return ModelCriteria(

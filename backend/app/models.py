@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -66,18 +66,19 @@ class ResultProbabilities(BaseModel):
     probs_modelo: list[float] | None = None  # model's 1/X/2 before applying a "dupla"
     modelo: str = ""  # which model produced the probabilities (or "fixo")
     low_confidence: bool = False  # no historical data for these teams: rough heuristic only
+    # Goal markets (only if model supports them and backtest shows they beat league frequency).
+    prob_over25: float | None = None  # P(3+ goals)
+    prob_btts: float | None = None  # P(both teams score)
+    goal_modelo: str = ""  # which model produced goal market predictions, if any
 
 
 MAX_APOSTAS = 500
 MAX_MATCHES = 20
 
 
-class CriterionInfo(BaseModel):
-    """A customizable criterion with its stable ID and default multiplier."""
-
-    id: str  # e.g., "elo", "casa", "ataque", "defesa", "h2h"
-    label: str  # display name
-    multiplier_default: float = 1.0  # neutral is 1.0; 0 = disable, 2 = double effect
+# Criteria the user can scale (same ids as app.research.importance.CRITERIA).
+CriterionId = Literal["elo", "casa", "ataque", "defesa", "h2h"]
+Multiplier = Annotated[float, Field(ge=0, le=2)]
 
 
 class DesdobramentoRequest(BaseModel):
@@ -85,9 +86,8 @@ class DesdobramentoRequest(BaseModel):
     n_apostas: int = Field(ge=1, le=MAX_APOSTAS)
     concurso: str | None = None  # stored with the predictions (BigQuery), optional
     data_sorteio: date | None = None
-    # Optional: customize criteria. Keys are criterion IDs, values are multipliers [0, 2].
-    # Omitted = use defaults. Not supported for "criterios-v0" and "elo-direto-v1".
-    criteria_multipliers: dict[str, float] = Field(default_factory=dict)
+    # User-scaled criteria of the trained models: 1 = default, 0 = ignore it, 2 = double it. Empty = defaults.
+    multiplicadores: dict[CriterionId, Multiplier] = {}
 
 
 class DesdobramentoResponse(BaseModel):
@@ -110,6 +110,7 @@ class LotteryGenerateResponse(BaseModel):
 
 class Criterion(BaseModel):
     nome: str
+    id: CriterionId | None = None  # set when the user can scale this criterion (multiplicadores)
     peso: float | None = None  # share of influence in [0, 1]; None when not quantifiable
     detalhe: str = ""
 
