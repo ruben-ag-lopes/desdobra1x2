@@ -61,8 +61,15 @@ export interface FixtureInfo {
   competition: string;
 }
 
+export type CriterionId = "elo" | "casa" | "ataque" | "defesa" | "h2h";
+
+/** User-scaled criteria: 1 = default, 0 = ignored, 2 = doubled. Missing = 1. */
+export type Multipliers = Partial<Record<CriterionId, number>>;
+
 export interface Criterion {
   nome: string;
+  /** Set when the user can scale this criterion. */
+  id: CriterionId | null;
   peso: number | null;
   detalhe: string;
 }

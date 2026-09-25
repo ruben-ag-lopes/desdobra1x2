@@ -1,35 +1,66 @@
 import { useRef, useState } from "react";
 import { getCriterios } from "../api/client";
-import type { ModelCriteria } from "../api/types";
+import type { CriterionId, ModelCriteria, Multipliers } from "../api/types";
+import { customOnly, isCustom, MULTIPLIER_MAX } from "../criteriaProfile";
 
 interface Props {
   /** Model ids used in the current result, with the (1-based) numbers of the games each one predicted. */
   usage: Map<string, number[]>;
   hasDouble: boolean;
+  multipliers: Multipliers;
+  /** Called with the user's criteria when they press "Aplicar e recalcular". */
+  onApply: (multipliers: Multipliers) => void;
 }
 
 function formatGames(numbers: number[]): string {
   return numbers.length === 1 ? `jogo ${numbers[0]}` : `jogos ${numbers.join(", ")}`;
 }
 
-export function CriteriaDialog({ usage, hasDouble }: Props) {
+/** Criteria the user can scale in these models, once each, most influential first. */
+function editableCriteria(models: ModelCriteria[]): { id: CriterionId; nome: string }[] {
+  const best = new Map<CriterionId, { nome: string; peso: number }>();
+  for (const c of models.flatMap((m) => m.criterios)) {
+    if (!c.id) continue;
+    const peso = c.peso ?? 0;
+    if (peso > (best.get(c.id)?.peso ?? -1)) best.set(c.id, { nome: c.nome, peso });
+  }
+  return [...best.entries()].sort((a, b) => b[1].peso - a[1].peso).map(([id, { nome }]) => ({ id, nome }));
+}
+
+function multiplierLabel(m: number): string {
+  if (m === 0) return "ignorado";
+  if (m === 1) return "100% (predefinido)";
+  return `${Math.round(m * 100)}%`;
+}
+
+export function CriteriaDialog({ usage, hasDouble, multipliers, onApply }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [models, setModels] = useState<ModelCriteria[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Multipliers>(multipliers);
 
   function open() {
     dialogRef.current?.showModal();
     setModels(null);
     setError(null);
+    setDraft(multipliers);
     getCriterios([...usage.keys()])
       .then(setModels)
       .catch((e) => setError(String(e)));
   }
 
+  function apply(next: Multipliers) {
+    onApply(customOnly(next));
+    dialogRef.current?.close();
+  }
+
+  const editable = models ? editableCriteria(models) : [];
+  const changed = JSON.stringify(customOnly(draft)) !== JSON.stringify(customOnly(multipliers));
+
   return (
     <>
       <button className="link-button" onClick={open}>
-        ⓘ Critérios e pesos
+        ⓘ Critérios e pesos{isCustom(multipliers) && " (personalizados)"}
       </button>
       <dialog
         ref={dialogRef}
@@ -45,6 +76,55 @@ export function CriteriaDialog({ usage, hasDouble }: Props) {
 
         {error && <p className="error">{error}</p>}
         {!models && !error && <p className="hint">A carregar...</p>}
+
+        {editable.length > 0 && (
+          <section className="criteria-editor">
+            <h4>Os teus critérios</h4>
+            <p className="hint">
+              Dá mais ou menos importância a cada critério: 100% é o modelo predefinido, 0% ignora o critério e
+              200% duplica o seu efeito. Aplica-se a todos os jogos com modelo treinado.
+            </p>
+            <datalist id="criteria-default-tick">
+              <option value={100} />
+            </datalist>
+            {editable.map(({ id, nome }) => {
+              const value = draft[id] ?? 1;
+              return (
+                <div key={id} className="criterion-slider">
+                  <label htmlFor={`mult-${id}`}>{nome}</label>
+                  <input
+                    id={`mult-${id}`}
+                    type="range"
+                    min={0}
+                    max={MULTIPLIER_MAX * 100}
+                    step={10}
+                    list="criteria-default-tick"
+                    value={Math.round(value * 100)}
+                    aria-valuetext={multiplierLabel(value)}
+                    onChange={(e) => setDraft({ ...draft, [id]: Number(e.target.value) / 100 })}
+                  />
+                  <output htmlFor={`mult-${id}`} className={value === 1 ? "hint" : ""}>
+                    {multiplierLabel(value)}
+                  </output>
+                </div>
+              );
+            })}
+            {isCustom(draft) && (
+              <p className="criteria-warning" role="note">
+                Critérios alterados não foram validados. Os predefinidos são os que tiveram o menor erro nos testes com
+                jogos passados.
+              </p>
+            )}
+            <div className="controls">
+              <button onClick={() => apply(draft)} disabled={!changed}>
+                Aplicar e recalcular
+              </button>
+              <button onClick={() => apply({})} disabled={!isCustom(draft) && !isCustom(multipliers)}>
+                Repor predefinidos
+              </button>
+            </div>
+          </section>
+        )}
 
         {models?.map((m) => (
           <section key={m.modelo}>
@@ -76,6 +156,10 @@ export function CriteriaDialog({ usage, hasDouble }: Props) {
             {m.dados && <p className="hint">Dados: {m.dados}</p>}
           </section>
         ))}
+
+        {models && isCustom(multipliers) && (
+          <p className="hint">Os pesos acima são os do modelo predefinido, antes das tuas alterações.</p>
+        )}
 
         {hasDouble && (
           <section>

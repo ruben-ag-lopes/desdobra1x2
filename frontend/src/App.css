@@ -38,6 +38,9 @@ body {
 }
 
 .app {
+  /* Explicit width: as an auto-margin flex item of #root it would otherwise grow to fit the widest table. */
+  width: 100%;
+  box-sizing: border-box;
   max-width: 960px;
   margin: 0 auto;
   padding: 24px 16px 64px;
@@ -111,6 +114,10 @@ header h1 {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.tab-content > * {
+  min-width: 0;
 }
 
 .draw-info {
@@ -276,6 +283,11 @@ tr.double td {
   padding: 0;
 }
 
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* Criteria pop-up */
 .criteria-dialog {
   width: min(640px, calc(100vw - 32px));
@@ -342,6 +354,53 @@ tr.double td {
 
 .criteria-list .hint {
   margin: 4px 0 0;
+}
+
+.criteria-dialog {
+  text-align: left;
+}
+
+.criterion-slider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px 9.5em;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.criterion-slider input[type="range"] {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--game-accent);
+}
+
+.criterion-slider output {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.criteria-warning,
+.custom-tag {
+  color: #fcd34d;
+}
+
+.custom-tag {
+  margin-left: 10px;
+  padding: 2px 8px;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  font-size: 0.75em;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+@media (max-width: 560px) {
+  .criterion-slider {
+    grid-template-columns: minmax(0, 1fr) 9.5em;
+  }
+  .criterion-slider label {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Footer with the support button */

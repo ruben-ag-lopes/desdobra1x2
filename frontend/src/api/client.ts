@@ -1,4 +1,12 @@
-import type { DesdobramentoResponse, Draw, FixtureInfo, ModelCriteria, LotteryTicket, MatchInput } from "./types";
+import type {
+  DesdobramentoResponse,
+  Draw,
+  FixtureInfo,
+  LotteryTicket,
+  MatchInput,
+  ModelCriteria,
+  Multipliers,
+} from "./types";
 
 // Backend URL. Default: localhost in development, same domain in production (Vercel Services
 // routes /api to the backend). Set VITE_API_URL when the API lives elsewhere (e.g. Render).
@@ -32,10 +40,17 @@ export function postDesdobramento(
   matches: MatchInput[],
   n_apostas: number,
   draw?: { concurso: string; data_sorteio: string | null },
+  multiplicadores: Multipliers = {},
 ): Promise<DesdobramentoResponse> {
   return request("/api/totobola/desdobramento", {
     method: "POST",
-    body: JSON.stringify({ matches, n_apostas, concurso: draw?.concurso, data_sorteio: draw?.data_sorteio }),
+    body: JSON.stringify({
+      matches,
+      n_apostas,
+      concurso: draw?.concurso,
+      data_sorteio: draw?.data_sorteio,
+      multiplicadores,
+    }),
   });
 }
 

@@ -1,6 +1,16 @@
 # Plano — Critérios editáveis pelo utilizador
 
-> Só plano, sem implementação.
+> **Estado (26/09/2026):** passos 1–3 feitos.
+> - **No pop-up "Critérios e pesos":** cursores de 0% a 200% por critério, "Aplicar e recalcular" e "Repor predefinidos". A escolha fica guardada no navegador e a tabela mostra a etiqueta "critérios personalizados".
+> - **Simplificações face ao plano:**
+>   - os multiplicadores são **por critério e valem para todos os modelos**, não um conjunto por modelo;
+>   - há **um único perfil personalizado** além do predefinido, sem perfis com nome;
+>   - os critérios antigos (jogos sem dados) ainda não são editáveis.
+> - **Por fazer:**
+>   - perfis com nome, exportar/importar e partilhar por link (passo 4);
+>   - ajuste manual por jogo (passo 5);
+>   - "Avaliar o meu perfil" (passo 6);
+>   - pesos dos critérios antigos (passo 2).
 
 ## Objetivo
 O utilizador pode **alterar livremente os critérios** das previsões num pop-up semelhante ao "Critérios e pesos". Pode desligar, reduzir ou reforçar cada critério e juntar o seu próprio ajuste por jogo. Os **critérios predefinidos mantêm-se sempre**: não podem ser apagados nem alterados e ficam a um clique ("Repor predefinidos").
