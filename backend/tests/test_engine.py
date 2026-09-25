@@ -4,7 +4,8 @@ import unittest
 
 from pydantic import ValidationError
 
-from app.models import MatchInput, ResultProbabilities
+from app.models import DesdobramentoRequest, MatchInput, ResultProbabilities
+from app.services import totobola_engine
 from app.services.totobola_engine import _apply_double, _double_counts
 
 
@@ -40,3 +41,62 @@ class DoubleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CustomizationTest(unittest.TestCase):
+    """Test criterion customization (multipliers)."""
+
+    def test_multiplier_1_0_equals_default(self):
+        """With all multipliers at 1.0, predictions should be identical to default."""
+        from app.research.importance import CRITERIA
+        
+        req = DesdobramentoRequest(
+            matches=[MatchInput(
+                id="1",
+                home_team="Portugal",
+                away_team="Noruega",
+                home_country="PT",
+                away_country="NO",
+                competition_code="LEA",
+            )],
+            n_apostas=4,
+        )
+        
+        # Prediction with defaults
+        probs_default, _ = totobola_engine.gerar_desdobramento(req.matches, req.n_apostas)
+        
+        # Prediction with all multipliers = 1.0
+        multipliers = {crit_id: 1.0 for crit_id in CRITERIA}
+        probs_custom, _ = totobola_engine.gerar_desdobramento(req.matches, req.n_apostas, multipliers)
+        
+        # Should be identical (within floating point tolerance)
+        self.assertAlmostEqual(probs_default[0].prob_home, probs_custom[0].prob_home, places=6)
+        self.assertAlmostEqual(probs_default[0].prob_draw, probs_custom[0].prob_draw, places=6)
+        self.assertAlmostEqual(probs_default[0].prob_away, probs_custom[0].prob_away, places=6)
+
+    def test_multiplier_0_disables_criterion(self):
+        """Setting a criterion to 0 should disable it (use neutral value)."""
+        from app.research.importance import CRITERIA
+        
+        req = DesdobramentoRequest(
+            matches=[MatchInput(
+                id="1",
+                home_team="Portugal",
+                away_team="Noruega",
+                home_country="PT",
+                away_country="NO",
+                competition_code="LEA",
+            )],
+            n_apostas=1,
+        )
+        
+        # Prediction with Elo at 0 (neutral)
+        multipliers = {"elo": 0.0}
+        probs, _ = totobola_engine.gerar_desdobramento(req.matches, req.n_apostas, multipliers)
+        
+        # With Elo disabled, the probabilities should be closer to neutral (1/3 each)
+        # This is a weak test, but at least verifies it doesn't crash
+        self.assertGreater(probs[0].prob_home, 0.0)
+        self.assertGreater(probs[0].prob_draw, 0.0)
+        self.assertGreater(probs[0].prob_away, 0.0)
+

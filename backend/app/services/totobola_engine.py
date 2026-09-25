@@ -128,14 +128,24 @@ def _trained_probabilities(match: MatchInput, result) -> ResultProbabilities | N
     )
 
 
-def calcular_probabilidades_lote(matches: list[MatchInput]) -> list[ResultProbabilities]:
-    """Best available model per match: trained on history, then live Elo, then the manual criteria."""
-    trained = trained_model.predict_many([(m.home_team, m.away_team) for m in matches])
+def calcular_probabilidades_lote(
+    matches: list[MatchInput], criteria_multipliers: dict[str, float] | None = None
+) -> list[ResultProbabilities]:
+    """Best available model per match: trained on history, then live Elo, then the manual criteria.
+
+    Args:
+        matches: fixtures to predict.
+        criteria_multipliers: per-criterion multipliers [0, 2]. Only applied to trained models.
+    """
+    trained = trained_model.predict_many([(m.home_team, m.away_team) for m in matches], criteria_multipliers)
     return [_trained_probabilities(m, t) or calcular_probabilidades(m) for m, t in zip(matches, trained)]
 
 
 def calcular_probabilidades(match: MatchInput) -> ResultProbabilities:
-    """Fallback chain without the trained model (live Elo, then the manual criteria)."""
+    """Fallback chain without the trained model (live Elo, then the manual criteria).
+
+    Note: criteria_multipliers only apply to trained models; they are ignored here.
+    """
 
     elo_result = _elo_probabilities(match)
     if elo_result is not None:
@@ -280,9 +290,21 @@ def _double_counts(probs: dict[Outcome, float], chosen: list[Outcome], n: int) -
     return counts
 
 
-def gerar_desdobramento(matches: list[MatchInput], n_apostas: int) -> tuple[list[ResultProbabilities], list[list[Outcome]]]:
+def gerar_desdobramento(
+    matches: list[MatchInput], n_apostas: int, criteria_multipliers: dict[str, float] | None = None
+) -> tuple[list[ResultProbabilities], list[list[Outcome]]]:
+    """Generate spread of bets for the given matches.
+
+    Args:
+        matches: fixtures with optional fixed_results and manual stats.
+        n_apostas: number of bet variants to generate.
+        criteria_multipliers: per-criterion multipliers [0, 2], e.g., {"elo": 1.5, "casa": 0.8}.
+                             Only applied to trained models.
+    """
     to_predict = [m for m in matches if len(m.fixed_results) != 1]
-    predicted = dict(zip((m.id for m in to_predict), calcular_probabilidades_lote(to_predict)))
+    predicted = dict(
+        zip((m.id for m in to_predict), calcular_probabilidades_lote(to_predict, criteria_multipliers))
+    )
 
     probabilities: list[ResultProbabilities] = []
     for m in matches:

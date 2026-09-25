@@ -17,7 +17,7 @@ from typing import Callable
 from app.cache import TTLCache
 from app.research import data
 from app.research.features import MIN_PRIOR_GAMES, FeatureState, build_rows_and_state, fixture_rows
-from app.research.importance import criteria_weights
+from app.research.importance import apply_multipliers, criteria_weights
 from app.research.models import OrderedLogitElo, PoissonModel
 from app.scrapers.elo_ratings import _PT_TO_EN
 
@@ -226,16 +226,36 @@ def _nation_alias(name: str) -> str | None:
     return _NATIONS_DATASET_ALIASES.get(en, en) if en else None
 
 
-def _predict_fixtures(domain: _Domain, fixtures: list[tuple[str, str]]) -> list[Probs]:
-    """Features come from the state after the last known result; fixtures never update it."""
+def _predict_fixtures(
+    domain: _Domain, fixtures: list[tuple[str, str]], criteria_multipliers: dict[str, float] | None = None
+) -> list[Probs]:
+    """Features come from the state after the last known result; fixtures never update it.
+
+    Args:
+        domain: trained model + state.
+        fixtures: list of (home, away) team indices.
+        criteria_multipliers: per-criterion multipliers [0, 2], e.g., {"elo": 1.5}.
+    """
     now = datetime.now()
     upcoming = [data.Match(now, home, away, 0, 0) for home, away in fixtures]
-    probs = domain.model.predict(fixture_rows(domain.state, upcoming))
+    rows = fixture_rows(domain.state, upcoming)
+
+    if criteria_multipliers:
+        rows = apply_multipliers(rows, criteria_multipliers)
+
+    probs = domain.model.predict(rows)
     return [(float(p[0]), float(p[1]), float(p[2])) for p in probs]
 
 
-def predict_many(pairs: list[tuple[str, str]]) -> list[tuple[Probs, str] | None]:
-    """For each (home, away): ((p_home, p_draw, p_away), model_version), or None if no domain knows both teams."""
+def predict_many(
+    pairs: list[tuple[str, str]], criteria_multipliers: dict[str, float] | None = None
+) -> list[tuple[Probs, str] | None]:
+    """For each (home, away): ((p_home, p_draw, p_away), model_version), or None if no domain knows both teams.
+
+    Args:
+        pairs: list of (home_team, away_team) names.
+        criteria_multipliers: per-criterion multipliers [0, 2], only applied to trained models.
+    """
     results: list[tuple[Probs, str] | None] = [None] * len(pairs)
     pending = list(range(len(pairs)))
 
@@ -263,7 +283,7 @@ def predict_many(pairs: list[tuple[str, str]]) -> list[tuple[Probs, str] | None]
         domain = _safe(_domain, spec)
         if domain is None:
             continue
-        for i, probs in zip(known, _predict_fixtures(domain, list(known.values()))):
+        for i, probs in zip(known, _predict_fixtures(domain, list(known.values()), criteria_multipliers)):
             results[i] = (probs, spec.version)
         pending = [i for i in pending if i not in known]
     return results

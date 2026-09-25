@@ -72,11 +72,22 @@ MAX_APOSTAS = 500
 MAX_MATCHES = 20
 
 
+class CriterionInfo(BaseModel):
+    """A customizable criterion with its stable ID and default multiplier."""
+
+    id: str  # e.g., "elo", "casa", "ataque", "defesa", "h2h"
+    label: str  # display name
+    multiplier_default: float = 1.0  # neutral is 1.0; 0 = disable, 2 = double effect
+
+
 class DesdobramentoRequest(BaseModel):
     matches: list[MatchInput] = Field(max_length=MAX_MATCHES)
     n_apostas: int = Field(ge=1, le=MAX_APOSTAS)
     concurso: str | None = None  # stored with the predictions (BigQuery), optional
     data_sorteio: date | None = None
+    # Optional: customize criteria. Keys are criterion IDs, values are multipliers [0, 2].
+    # Omitted = use defaults. Not supported for "criterios-v0" and "elo-direto-v1".
+    criteria_multipliers: dict[str, float] = Field(default_factory=dict)
 
 
 class DesdobramentoResponse(BaseModel):
