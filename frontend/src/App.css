@@ -19,6 +19,18 @@
   --game-accent-soft: #2a1a12;
 }
 
+.app[data-game="desportos"] {
+  --game-accent: #0f766e;
+  --game-accent-soft: #0f2a28;
+}
+
+.coming-soon {
+  background: var(--game-accent-soft);
+  border-left: 4px solid var(--game-accent);
+  padding: 16px;
+  border-radius: 6px;
+}
+
 .app[data-game="totoloto"] {
   --game-accent: #0088d0;
   --game-accent-soft: #0f2a3f;
@@ -56,11 +68,19 @@ body {
   border-inline: none;
 }
 
-header h1 {
-  margin-bottom: 4px;
-  color: #e6edf3;
-  font-size: clamp(28px, 5vw, 40px);
-  letter-spacing: normal;
+/* The logo's navy lettering needs a light plate on the dark theme. */
+.brand {
+  margin: 0 0 8px;
+  line-height: 0;
+}
+
+.brand img {
+  display: inline-block;
+  width: min(360px, 100%);
+  height: auto;
+  padding: 10px 18px;
+  background: #ffffff;
+  border-radius: 14px;
 }
 
 .disclaimer {
@@ -86,11 +106,36 @@ header h1 {
   color: #fbbf24;
 }
 
+.sections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 24px 0 12px;
+}
+
+.sections button {
+  min-height: 52px;
+  padding: 6px 8px;
+  background: #142033;
+  border: 1px solid #2a3a4a;
+  color: #e6edf3;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sections button.active {
+  background: var(--game-accent);
+  border-color: var(--game-accent);
+  color: var(--game-accent-text, #fff);
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 24px 0;
+  margin: 0 0 24px;
   border-bottom: 1px solid #2a3a4a;
   padding-bottom: 8px;
 }

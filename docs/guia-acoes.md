@@ -30,12 +30,8 @@ Detalhes e alternativas (e-mail `contacto@desdobra1x2.pt` grátis com Cloudflare
 - **PayPal.Me:** paypal.com/paypalme → cria o teu link, `paypal.me/<nome>`.
 - Depois pões os dois em `frontend/.env.local` (local) e nas variáveis do Vercel: `VITE_BUYMEACOFFEE_URL` e `VITE_PAYPAL_URL`. Envia-me os links e faço eu.
 
-## 5. API-Football (10 min) — desbloqueia Liga 2, Liga 3 e Campeonato de Portugal
-1. dashboard.api-football.com/register → cria a conta com o teu e-mail e confirma-o.
-2. Escolhe o plano **Free** (100 pedidos/dia, todas as competições). Não pede cartão.
-3. No painel, copia a **API Key**.
-4. Guarda-a em `backend/.env` numa linha `API_FOOTBALL_KEY=...` (crio o ficheiro se quiseres) e, quando publicarmos, nas variáveis do Vercel.
-5. Avisa-me. Eu verifico logo o que o plano gratuito realmente inclui: os ids das ligas portuguesas, as épocas disponíveis e a cobertura da Liga 3 e do Campeonato de Portugal. Se o histórico for curto demais, digo-te antes de gastarmos tempo.
+## 5. API-Football — ✅ conta criada
+A chave está em `backend/.env` (`API_FOOTBALL_KEY`, fora do Git). Confirmei que a mesma chave dá acesso gratuito (100 pedidos/dia cada) a futebol, basquetebol, NBA, Fórmula 1, MMA, râguebi, voleibol e andebol. Falta o código que a usa, com uma única atualização por dia (plano 13). Quando publicarmos, a chave vai também para as variáveis do Vercel.
 
 ## 6. Base de dados (15 min) — só depois do deploy
 Recomendo **Postgres na Neon** (plano gratuito), ligado ao Vercel:
@@ -57,6 +53,6 @@ A alternativa é continuar só com o BigQuery, que dá mais trabalho e custos em
 | 2 | Vercel | 10 min | 0 € | app online |
 | 3 | Domínio `.pt` | 15 min | ~12–17 €/ano | endereço próprio |
 | 4 | Buy Me a Coffee e PayPal.Me | 20 min | 0 € | donativos |
-| 5 | API-Football | 10 min | 0 € | ligas portuguesas |
+| 5 | API-Football | feito | 0 € | ligas portuguesas |
 | 6 | Neon (Postgres) | 15 min | 0 € | acerto das previsões |
 | 7 | Decisões | — | — | visual e anúncios |

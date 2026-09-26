@@ -1,5 +1,8 @@
 # Roteiro
 
+#api apoio
+https://dashboard.api-football.com/soccer/widgets
+
 O que já funciona em http://localhost:5173: Totobola e Totobola Extra (com fixos, duplas e critérios editáveis), separador Futebol com 22 ligas, Totoloto, Euromilhões e EuroDreams, aviso em destaque e botão de apoio. Como usar: [tutorial](tutorial.md). Método: [critérios](criterios.md).
 
 ## O que falta
