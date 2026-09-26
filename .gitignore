@@ -5,3 +5,6 @@ frontend/node_modules/
 frontend/dist/
 .env
 backend/data/
+.claude/settings.local.json
+frontend/.env.local
+backend/.env
