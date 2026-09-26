@@ -6,7 +6,7 @@ O que já funciona em http://localhost:5173: Totobola e Totobola Extra (com fixo
 
 | # | Tarefa | Depende de | Plano |
 |---|---|---|---|
-| 3 | Publicar no Vercel | GitHub, conta Vercel | [plano-publicacao-vercel.md](plano-publicacao-vercel.md) |
+| 3 | Publicar no Vercel | conta Vercel (o GitHub já está) | [plano-publicacao-vercel.md](plano-publicacao-vercel.md) |
 | 4 | Base de dados de resultados e acerto das previsões | escolha da base de dados | [plano-base-de-dados.md](plano-base-de-dados.md) |
 | 5 | Links reais de donativos; anúncios (fases 2 e 3) | contas Buy Me a Coffee e PayPal | [plano-anuncios-e-apoios.md](plano-anuncios-e-apoios.md) |
 | 6 | Futebol: competições europeias, seleções, previsões pré-calculadas | tarefa diária (plano 4) | [plano-competicoes.md](plano-competicoes.md) |
@@ -19,4 +19,4 @@ O que já funciona em http://localhost:5173: Totobola e Totobola Extra (com fixo
 **As tuas ações** (contas, chaves, decisões), pela ordem sugerida: [guia-acoes.md](guia-acoes.md).
 
 ## Ordem sugerida
-GitHub e Vercel (3) → domínio (10) → visual (7) → ligas portuguesas (13, fase 1) → base de dados e tarefa diária (4) → documentação final (11) → critérios (12) → Futebol europeu (6) → anúncios (5, quando houver tráfego).
+Vercel (3) → domínio (10) → visual (7) → ligas portuguesas (13, fase 1) → base de dados e tarefa diária (4) → documentação final (11) → critérios (12) → Futebol europeu (6) → anúncios (5, quando houver tráfego).

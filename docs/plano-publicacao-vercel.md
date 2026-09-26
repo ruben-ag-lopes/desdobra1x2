@@ -35,7 +35,7 @@ Um único projeto Vercel com **Services** (em beta): o frontend (Vite) serve `/`
 `vercel.json` (Services `web` + `api`, região `fra1`), Python 3.12, dependências fixas (BigQuery em `requirements-optional.txt`), cache no CDN nas respostas que mudam pouco, limites por pedido (500 apostas, 20 jogos) e variáveis `VITE_API_URL`, `CORS_ORIGINS` e `DATA_DIR`.
 
 ## A fazer antes da publicação
-1. **Repositório no GitHub** (privado). O Git local já existe, falta o remoto.
+1. ✅ **Repositório no GitHub** (privado): github.com/ruben-ag-lopes/desdobra1x2.
 2. **Confirmar a configuração dos Services** no 1.º preview deploy. Estão em beta e as chaves `framework`, `entrypoint` e `functions` por serviço seguem a documentação de 09/2026.
 3. **Arranque a frio:** cada instância nova descarrega os CSV (~4 MB) e treina os modelos precisos (~5–15 s). Aceitável na fase 1.
    - Fase 2: uma tarefa agendada (Vercel Cron, diária) treina os modelos e guarda um artefacto pequeno (ratings Elo + coeficientes, em JSON) na base de dados ou no Vercel Blob. Os pedidos passam a só ler esse artefacto, com resposta em menos de 1 s mesmo a frio. Ver o plano 4.
@@ -68,7 +68,7 @@ Um único projeto Vercel com **Services** (em beta): o frontend (Vite) serve `/`
 - **Análise de tráfego** para decidir sobre anúncios: Vercel Web Analytics (sem cookies).
 
 ## Passos
-1. Criar o repositório no GitHub e fazer o primeiro push.
+1. ✅ Repositório no GitHub.
 2. Importar o repositório no Vercel (plano Hobby) e definir as variáveis de ambiente.
 3. Preview deploy e checklist de verificação (abaixo).
 4. Domínio próprio (plano 10) e deploy de produção.

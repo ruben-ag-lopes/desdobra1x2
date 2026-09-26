@@ -2,10 +2,8 @@
 
 Só tu podes criar contas, aceitar termos e pagar. Este guia diz o que fazer, pela ordem que desbloqueia mais trabalho, e o que me enviar depois. **Nunca me envies palavras-passe. Chaves de API e tokens também não os colo em ficheiros que vão para o Git**: guardam-se em `backend/.env` (já ignorado pelo Git) e nas variáveis do Vercel.
 
-## 1. GitHub (10 min) — desbloqueia o Vercel
-O `gh` já está ligado à conta `ruben-ag-lopes`, por isso posso fazer isto por ti quando disseres: criar um repositório **privado** `desdobra1x2` e fazer o primeiro push. O `.gitignore` exclui `venv`, `node_modules`, `dist`, `.env` e `backend/data`.
-
-Se preferires fazer tu: github.com → New repository → nome `desdobra1x2` → **Private** → sem README → depois, na pasta do projeto, `git remote add origin <url>` e `git push -u origin master`.
+## 1. GitHub — ✅ feito
+Repositório **privado**: https://github.com/ruben-ag-lopes/desdobra1x2 (ramo `master`). Só tu o vês. Para enviar alterações novas: `git push`.
 
 ## 2. Vercel (10 min)
 1. vercel.com → **Sign Up** → **Continue with GitHub** (plano **Hobby**, gratuito, sem cartão).
@@ -55,7 +53,7 @@ A alternativa é continuar só com o BigQuery, que dá mais trabalho e custos em
 ## Resumo
 | # | Ação | Tempo | Custo | Desbloqueia |
 |---|---|---|---|---|
-| 1 | GitHub | 10 min | 0 € | tudo o resto |
+| 1 | GitHub | feito | 0 € | tudo o resto |
 | 2 | Vercel | 10 min | 0 € | app online |
 | 3 | Domínio `.pt` | 15 min | ~12–17 €/ano | endereço próprio |
 | 4 | Buy Me a Coffee e PayPal.Me | 20 min | 0 € | donativos |
