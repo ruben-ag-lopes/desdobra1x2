@@ -31,26 +31,14 @@ Um único projeto Vercel com **Services** (em beta): o frontend (Vite) serve `/`
 | Memória | 2 GB (Hobby) | Suficiente. |
 | Uso comercial | Hobby = **só não comercial** | Donativos são permitidos. Anúncios ou afiliados obrigam ao plano **Pro** (pago, por membro). |
 
-## Alterações ao código
-Já feitas:
-- `VITE_API_URL` configurável no frontend. Vazio = mesmo domínio.
-- `CORS_ORIGINS` configurável no backend.
-- `DATA_DIR` configurável para a cache de CSV.
-- `<html lang="pt-PT">` e título da página.
+## Já preparado no código
+`vercel.json` (Services `web` + `api`, região `fra1`), Python 3.12, dependências fixas (BigQuery em `requirements-optional.txt`), cache no CDN nas respostas que mudam pouco, limites por pedido (500 apostas, 20 jogos) e variáveis `VITE_API_URL`, `CORS_ORIGINS` e `DATA_DIR`.
 
-Também já feitas:
-- ✅ `vercel.json` na raiz com os Services (`web` + `api`), região `fra1` (Frankfurt), `maxDuration` de 120 s e `excludeFiles` (tests, data, venv).
-- ✅ `backend/.python-version` = 3.12 e versões fixas no `requirements.txt`. O BigQuery passou para `requirements-optional.txt`, para o pacote ficar mais leve.
-- ✅ Em produção o frontend usa a API no mesmo domínio por omissão (`VITE_API_URL` só é preciso no plano B).
-- ✅ Cabeçalhos `Cache-Control` nas respostas de concursos, jogos, sorteios e critérios. O CDN do Vercel guarda-as 15 min (critérios: 1 h), o que evita repetir pedidos ao site da Santa Casa em cada instância.
-- ✅ Limites contra abusos: no máximo 500 apostas e 20 jogos por pedido (422 acima disso).
-- ✅ Arranque mais rápido: as ligas só são carregadas quando um jogo precisa delas, e as previsões saem de um estado guardado (0,03 s depois do treino).
-
-A fazer antes da publicação:
-1. **Repositório Git:** o projeto ainda não está em git. `git init`, garantir que o `.gitignore` exclui `backend/venv/`, `backend/data/`, `.env*` e `node_modules/`, depois publicar no GitHub (privado).
-2. **Arranque a frio:** cada instância nova descarrega os CSV (~4 MB) e treina os modelos precisos (~5–15 s). Aceitável na fase 1.
-   - Fase 2: uma tarefa agendada (Vercel Cron, diária) treina os modelos e guarda um "artefacto" pequeno (ratings Elo + coeficientes, em JSON) na base de dados ou no Vercel Blob. Os pedidos passam a só ler esse artefacto, com resposta em menos de 1 s mesmo a frio. Ver o plano 4.
-3. **Confirmar a configuração dos Services** no 1.º preview deploy. Estão em beta, e as chaves `framework`, `entrypoint` e `functions` por serviço seguem a documentação de 09/2026.
+## A fazer antes da publicação
+1. **Repositório no GitHub** (privado). O Git local já existe, falta o remoto.
+2. **Confirmar a configuração dos Services** no 1.º preview deploy. Estão em beta e as chaves `framework`, `entrypoint` e `functions` por serviço seguem a documentação de 09/2026.
+3. **Arranque a frio:** cada instância nova descarrega os CSV (~4 MB) e treina os modelos precisos (~5–15 s). Aceitável na fase 1.
+   - Fase 2: uma tarefa agendada (Vercel Cron, diária) treina os modelos e guarda um artefacto pequeno (ratings Elo + coeficientes, em JSON) na base de dados ou no Vercel Blob. Os pedidos passam a só ler esse artefacto, com resposta em menos de 1 s mesmo a frio. Ver o plano 4.
 
 ## Riscos a testar numa pré-visualização (preview deploy)
 - **Scraping a partir de IPs de datacenter:** o jogossantacasa.pt pode bloquear ou limitar pedidos vindos do Vercel. Testar `/api/totobola/draws` e `/api/lotteries/*/draw`.
@@ -80,12 +68,11 @@ A fazer antes da publicação:
 - **Análise de tráfego** para decidir sobre anúncios: Vercel Web Analytics (sem cookies).
 
 ## Passos
-1. Git + GitHub.
-2. Criar o `vercel.json` (Services), `.python-version` e `excludeFiles`.
-3. Importar o repositório no Vercel (plano Hobby) e definir as variáveis de ambiente.
-4. Preview deploy e checklist de verificação (abaixo).
-5. Domínio próprio e deploy de produção.
-6. Fase 2: Cron de treino + artefacto do modelo (com o plano 4).
+1. Criar o repositório no GitHub e fazer o primeiro push.
+2. Importar o repositório no Vercel (plano Hobby) e definir as variáveis de ambiente.
+3. Preview deploy e checklist de verificação (abaixo).
+4. Domínio próprio (plano 10) e deploy de produção.
+5. Fase 2: Cron de treino + artefacto do modelo (com o plano 4).
 
 ## Verificação
 - `GET /api/health` → `{"status":"ok"}`.

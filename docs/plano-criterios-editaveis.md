@@ -1,74 +1,27 @@
-# Plano — Critérios editáveis pelo utilizador
+# Plano 12 — Critérios editáveis: o que falta
 
-> **Estado:** passos 1–3 feitos.
-> - **No pop-up "Critérios e pesos":** cursores de 0% a 200% por critério, "Aplicar e recalcular" e "Repor predefinidos". A escolha fica guardada no navegador e a tabela mostra a etiqueta "critérios personalizados".
-> - **Simplificações face ao plano:**
->   - os multiplicadores são **por critério e valem para todos os modelos**, não um conjunto por modelo;
->   - há **um único perfil personalizado** além do predefinido, sem perfis com nome;
->   - os critérios antigos (jogos sem dados) ainda não são editáveis.
-> - **Por fazer:**
->   - perfis com nome, exportar/importar e partilhar por link (passo 4);
->   - ajuste manual por jogo (passo 5);
->   - "Avaliar o meu perfil" (passo 6);
->   - pesos dos critérios antigos (passo 2).
+Já existe: no pop-up "Critérios e pesos", um cursor de 0% a 200% por critério, com "Aplicar e recalcular" e "Repor predefinidos". A escolha fica guardada no navegador e a tabela mostra "critérios personalizados". Como funciona: [criterios.md](criterios.md).
 
-## Objetivo
-O utilizador pode **alterar livremente os critérios** das previsões num pop-up semelhante ao "Critérios e pesos". Pode desligar, reduzir ou reforçar cada critério e juntar o seu próprio ajuste por jogo. Os **critérios predefinidos mantêm-se sempre**: não podem ser apagados nem alterados e ficam a um clique ("Repor predefinidos").
+Hoje há um único conjunto de multiplicadores, válido para todos os modelos.
 
-## Como funciona (para o utilizador)
-1. No pop-up "Critérios e pesos" aparece o botão **"Personalizar"**, que abre o editor.
-2. Para cada modelo usado no concurso atual (ex.: Seleções, Primeira Liga) há uma lista de critérios, cada um com:
-   - um **cursor de 0% a 200%** (100% = predefinido, com uma marca visível nessa posição);
-   - um **interruptor** para ligar ou desligar (desligar = 0%);
-   - o **peso resultante**, atualizado ao mover o cursor (a mesma barra do pop-up atual).
-3. **Nos critérios antigos** (jogos sem dados), os pesos 40/30/15/10/5% e o bónus de casa editam-se diretamente e são reajustados para somar 100%.
-4. **Ajuste manual por jogo** (fase 2): em cada linha do boletim, um pequeno controlo "inclinar para a casa ou para fora" (−3 a +3) serve para informação que o modelo não tem, como lesões, castigos ou motivação. Há também um ajuste opcional da tendência para o empate.
-5. **Perfis:**
-   - "Predefinido" (bloqueado);
-   - perfis próprios com nome ("Conservador", "O meu", …);
-   - escolher o perfil ativo, duplicar, apagar;
-   - exportar ou importar (ficheiro JSON ou link para partilhar).
-6. **Com um perfil personalizado ativo:**
-   - a tabela de probabilidades mostra a etiqueta **"critérios personalizados"**;
-   - o pop-up avisa que os critérios alterados **não foram validados**;
-   - as probabilidades do modelo predefinido podem ser mostradas ao lado para comparação.
-7. **"Avaliar o meu perfil"** (fase 3): corre o backtest da última época com o perfil do utilizador e mostra o erro (log loss) comparado com o predefinido. Tem sobretudo valor educativo e mostra o efeito real das alterações.
+## Falta fazer
+1. **Perfis com nome:** além do "Predefinido" (bloqueado), perfis próprios ("Conservador", "O meu", …). Escolher o ativo, duplicar e apagar.
+2. **Exportar, importar e partilhar por link** (perfil codificado no URL). Um link corrompido volta ao predefinido, com aviso.
+3. **Multiplicadores por modelo:** poder alterar só a Primeira Liga, por exemplo, sem mexer nas seleções.
+4. **Ajuste manual por jogo** (−3 a +3 na linha do boletim), para informação que o modelo não tem: lesões, castigos, motivação.
+   - Aplica-se em log-odds (×0,15 por passo) às probabilidades finais e renormaliza, antes de fixos e duplas.
+   - Opcional: ajuste da tendência para o empate.
+5. **Critérios antigos editáveis** (jogos sem histórico): os pesos 40/30/15/10/5% e o bónus de casa passam a ser argumentos da função (hoje são constantes em `totobola_engine.py`) e editam-se diretamente, reajustados para somar 100%.
+6. **"Avaliar o meu perfil":** corre o backtest da última época com o perfil do utilizador e mostra o log loss comparado com o predefinido. Precisa de limite de pedidos e cache.
+7. **Comparação:** mostrar as probabilidades do modelo predefinido ao lado das personalizadas.
+8. **Registo** das previsões personalizadas com o perfil (plano 4), para comparar o acerto dos perfis com o predefinido.
+9. **Cache:** a chave inclui o perfil. O predefinido continua a usar a cache do CDN e os personalizados não.
 
-## Como funciona (técnico)
-- **Transformação única para todos os modelos:** cada critério é um grupo de variáveis (já definido em `app/research/importance.py`, `CRITERIA`, com um valor "neutro" por variável). Um multiplicador *m* aplica-se assim:
-  `x' = neutro + m · (x − neutro)`, antes de `model.predict`.
-  - *m* = 1: exatamente o modelo predefinido (garantido por teste);
-  - *m* = 0: o critério deixa de contar (é a mesma operação usada hoje para calcular os pesos);
-  - *m* = 2: o efeito do critério duplica.
-  - Funciona igual para o Elo calibrado e para o Poisson, sem reescrever os modelos.
-- **Ajuste manual por jogo:** soma em log-odds (inclinação ×0,15 por passo) aplicada às probabilidades finais e renormalizada, antes de fixos e duplas.
-- **Critérios antigos:** os pesos passam a ser argumentos da função (hoje são constantes em `totobola_engine.py`), com os valores atuais como predefinição.
-- **API:**
-  - `GET /api/totobola/criterios` passa a devolver um `id` estável por critério (`elo`, `casa`, `ataque`, `defesa`, `h2h`) e o valor predefinido;
-  - `POST /desdobramento` aceita `criterios: {modelo: {id: multiplicador}}` e `ajustes: {match_id: inclinação}`. Os valores são validados (0–2; −3 a +3) e ids desconhecidos são rejeitados;
-  - a resposta indica, por jogo, `personalizado: true` e as probabilidades predefinidas para comparação.
-- **Onde se guarda:**
-  - no navegador (`localStorage`), sem conta;
-  - partilha por link (perfil codificado no URL);
-  - com contas (futuro) na base de dados do plano 4.
-- **Registo:** as previsões personalizadas são gravadas com o perfil (plano 4), para comparar o acerto dos perfis com o predefinido.
-- **Cache:** a chave da cache inclui o perfil. O perfil predefinido continua a usar a cache do CDN, e os personalizados não.
-
-## Regras para manter os predefinidos seguros
-- **Imutável:** o perfil "Predefinido" não é editável nem apagável. É definido no servidor e versionado com o modelo (ex.: `p1-elo-logit-v1`).
-- **Modelo novo:** quando o modelo muda de versão, os perfis do utilizador continuam a funcionar, porque os multiplicadores são relativos. O pop-up avisa que o predefinido foi atualizado.
-- **Sem perfil válido** (ex.: link corrompido): volta-se ao predefinido, com um aviso.
-
-## Passos
-1. Backend: ids estáveis nos critérios; função `apply_multipliers(rows, multipliers)`; teste "*m* = 1 dá exatamente o predefinido"; validação na API.
-2. Critérios antigos parametrizáveis.
-3. Frontend: editor no pop-up (cursores, interruptores, pesos ao vivo), perfis no `localStorage`, etiqueta "personalizados".
-4. Exportar, importar e partilhar por link.
-5. Ajuste manual por jogo.
-6. "Avaliar o meu perfil" (backtest com limite de pedidos e cache).
+## Regras de segurança dos predefinidos
+- O perfil "Predefinido" não é editável nem apagável. É definido no servidor e versionado com o modelo.
+- Quando o modelo muda de versão, os perfis do utilizador continuam a funcionar (os multiplicadores são relativos) e o pop-up avisa que o predefinido foi atualizado.
 
 ## Verificação
-- Com todos os multiplicadores a 100% as probabilidades são **idênticas** às predefinidas (teste automático).
-- Um critério desligado (0%) dá o mesmo resultado que o cálculo de pesos atual para esse critério.
-- "Repor predefinidos" volta sempre ao estado inicial, mesmo depois de importar um perfil.
-- Pedido com valores fora dos limites ou ids desconhecidos → erro 422.
+- Com todos os multiplicadores a 100% as probabilidades são idênticas às predefinidas (já testado).
+- "Repor predefinidos" volta ao estado inicial mesmo depois de importar um perfil.
+- Pedido com valores fora dos limites ou ids desconhecidos: erro 422 (já testado).

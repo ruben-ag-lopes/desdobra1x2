@@ -54,7 +54,7 @@ Converte a diferença de Elo em probabilidades por um *logit ordenado*, com trê
 Código: `app/research/models.py`.
 
 ## 5. Que modelo é usado em cada liga
-Para cada liga, o backtest compara os modelos e fica com o de menor erro. Se a diferença for inferior a 0,002 de log loss, fica o mais simples (Elo calibrado). As tabelas completas estão em [plano-competicoes.md](plano-competicoes.md) e os dados brutos em `docs/backtests/`.
+Para cada liga, o backtest compara os modelos e fica com o de menor erro. Se a diferença for inferior a 0,002 de log loss, fica o mais simples (Elo calibrado). As tabelas completas estão em [backtests/README.md](backtests/README.md), com os dados brutos na mesma pasta.
 
 **No Totobola**, a competição que a Santa Casa indica para cada jogo decide o modelo. Se não indicar, usa-se a primeira liga em que as duas equipas jogaram na última época, para os clubes promovidos ou despromovidos serem previstos na divisão onde jogam agora. Se nenhum modelo conhecer as equipas, recorre-se ao Elo publicado e, por fim, aos critérios antigos.
 
@@ -98,7 +98,7 @@ python -m app.research.backtest --international
 ## 11. Limitações
 - Não sabemos de lesões, castigos, motivação, mudanças de treinador nem do tempo.
 - Nas divisões baixas há menos jogos por equipa e mais mudanças de plantel, por isso as previsões são menos precisas.
-- As divisões portuguesas abaixo da 1.ª Liga, as taças e as competições europeias ainda não têm modelo (ver [plano-ligas.md](plano-ligas.md)).
+- As divisões portuguesas abaixo da 1.ª Liga, as taças e as competições europeias ainda não têm modelo (previstas no [plano-ligas.md](plano-ligas.md)).
 - Os mercados de golos têm ganho modesto sobre a média da liga.
 
 ## Critérios personalizados

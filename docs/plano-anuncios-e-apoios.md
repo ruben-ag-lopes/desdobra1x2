@@ -1,12 +1,10 @@
 # Plano 5 — Anúncios e apoios (Buy Me a Coffee / PayPal)
 
-## Já feito
-Rodapé com o botão **"☕ Apoiar o projeto"**. Ao clicar abre as duas opções, Buy Me a Coffee e PayPal, cada uma numa nova janela (`frontend/src/components/SupportFooter.tsx`).
-- Os links vêm de `VITE_BUYMEACOFFEE_URL` e `VITE_PAYPAL_URL` (ver `frontend/.env.example`). Sem eles, apontam para as páginas iniciais dos serviços.
-- **A fazer por ti:**
-  - criar a página no buymeacoffee.com;
-  - no PayPal, criar um link PayPal.Me (mais simples) ou um botão "Donate";
-  - pôr os dois links em `frontend/.env.local` (local) e nas variáveis do Vercel (produção).
+## Por fazer (tu): links do botão de apoio
+O rodapé já tem o botão **"☕ Apoiar o projeto"** com Buy Me a Coffee e PayPal. Falta pôr os links reais:
+- criar a página no buymeacoffee.com;
+- no PayPal, criar um link PayPal.Me (mais simples) ou um botão "Donate";
+- pôr os dois links em `frontend/.env.local` (local) e nas variáveis do Vercel (produção): `VITE_BUYMEACOFFEE_URL` e `VITE_PAYPAL_URL`. Sem eles, os botões apontam para as páginas iniciais dos serviços.
 
 ## O que condiciona os anúncios
 1. **Vercel:** o plano gratuito (Hobby) proíbe anúncios, porque contam como uso comercial. Donativos são permitidos. Com anúncios é preciso o plano **Pro** (pago).
@@ -17,7 +15,7 @@ Rodapé com o botão **"☕ Apoiar o projeto"**. Ao clicar abre as duas opções
 ## Estratégia recomendada, por fases
 | Fase | Quando | O quê | Custo |
 |---|---|---|---|
-| 1 | Lançamento | Só donativos (feito). Vercel Web Analytics (sem cookies) para medir as visitas. | 0 € |
+| 1 | Lançamento | Só donativos. Vercel Web Analytics (sem cookies) para medir as visitas. | 0 € |
 | 2 | Tráfego regular (ex.: alguns milhares de visitas/mês) | Patrocínio direto de marcas desportivas que não sejam de apostas, num espaço fixo do rodapé ou da página. Sem cookies nem banner de consentimento. | 0 € |
 | 3 | Se a fase 2 justificar | Plano Pro no Vercel, banner de consentimento certificado e candidatura ao AdSense (ou uma rede alternativa). Medir se a receita paga o Pro. | Pro + tempo |
 | Opcional | Só com parecer jurídico | Afiliação com operadores licenciados pelo SRIJ. É o mais rentável, mas também o mais regulado e o que mais afeta a imagem de ferramenta independente. | — |
