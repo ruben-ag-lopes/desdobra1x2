@@ -14,6 +14,11 @@
   --game-accent-soft: #0e2a26;
 }
 
+.app[data-game="futebol"] {
+  --game-accent: #c2410c;
+  --game-accent-soft: #2a1a12;
+}
+
 .app[data-game="totoloto"] {
   --game-accent: #0088d0;
   --game-accent-soft: #0f2a3f;
@@ -286,6 +291,138 @@ tr.double td {
 .table-scroll {
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* Futebol tab */
+.futebol-filters {
+  align-items: flex-end;
+}
+
+.futebol-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.futebol-filters select,
+.futebol-filters input {
+  min-height: 40px;
+  min-width: 200px;
+}
+
+.period-toggle {
+  display: flex;
+}
+
+.period-toggle button.active,
+.outcome-buttons button.active {
+  background: var(--game-accent);
+  border-color: var(--game-accent);
+  color: var(--game-accent-text, #fff);
+}
+
+.game-day h3 {
+  margin: 8px 0;
+  text-align: left;
+  text-transform: capitalize;
+}
+
+.game-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 12px;
+}
+
+.game-card {
+  background: #142033;
+  border: 1px solid #2a3a4a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-card.picked {
+  border-color: var(--game-accent);
+}
+
+.game-card h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.game-card p {
+  margin: 0;
+}
+
+.game-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #9fb0c3;
+}
+
+.outcome-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.outcome-buttons button {
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.outcome-buttons .outcome {
+  font-weight: 700;
+}
+
+.outcome-buttons .outcome-book {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.goal-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.boletim {
+  position: sticky;
+  bottom: 0;
+  background: #142033;
+  border: 1px solid var(--game-accent);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: left;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.boletim-head {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.boletim ul {
+  margin: 8px 0;
+  padding-left: 18px;
+  max-height: 30vh;
+  overflow-y: auto;
 }
 
 /* Criteria pop-up */

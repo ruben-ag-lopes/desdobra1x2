@@ -7,9 +7,10 @@ interface Props {
   /** Model ids used in the current result, with the (1-based) numbers of the games each one predicted. */
   usage: Map<string, number[]>;
   hasDouble: boolean;
-  multipliers: Multipliers;
+  /** The user's criteria; together with onApply, shows the editor. */
+  multipliers?: Multipliers;
   /** Called with the user's criteria when they press "Aplicar e recalcular". */
-  onApply: (multipliers: Multipliers) => void;
+  onApply?: (multipliers: Multipliers) => void;
 }
 
 function formatGames(numbers: number[]): string {
@@ -33,7 +34,7 @@ function multiplierLabel(m: number): string {
   return `${Math.round(m * 100)}%`;
 }
 
-export function CriteriaDialog({ usage, hasDouble, multipliers, onApply }: Props) {
+export function CriteriaDialog({ usage, hasDouble, multipliers = {}, onApply }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [models, setModels] = useState<ModelCriteria[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,11 +51,11 @@ export function CriteriaDialog({ usage, hasDouble, multipliers, onApply }: Props
   }
 
   function apply(next: Multipliers) {
-    onApply(customOnly(next));
+    onApply?.(customOnly(next));
     dialogRef.current?.close();
   }
 
-  const editable = models ? editableCriteria(models) : [];
+  const editable = models && onApply ? editableCriteria(models) : [];
   const changed = JSON.stringify(customOnly(draft)) !== JSON.stringify(customOnly(multipliers));
 
   return (
@@ -81,8 +82,8 @@ export function CriteriaDialog({ usage, hasDouble, multipliers, onApply }: Props
           <section className="criteria-editor">
             <h4>Os teus critérios</h4>
             <p className="hint">
-              Dá mais ou menos importância a cada critério: 100% é o modelo predefinido, 0% ignora o critério e
-              200% duplica o seu efeito. Aplica-se a todos os jogos com modelo treinado.
+              Dá mais ou menos importância a cada critério: 100% é o modelo predefinido, 0% ignora o critério e 200%
+              duplica o seu efeito. Aplica-se a todos os jogos com modelo treinado.
             </p>
             <datalist id="criteria-default-tick">
               <option value={100} />

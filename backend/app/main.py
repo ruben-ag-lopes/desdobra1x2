@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import lotteries, totobola
+from app.routers import futebol, lotteries, totobola
 
 app = FastAPI(title="desdobra1X2")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(totobola.router)
 app.include_router(lotteries.router)
+app.include_router(futebol.router)
 
 
 @app.get("/api/health")

@@ -14,6 +14,7 @@ import httpx
 CACHE_DIR = Path(os.environ.get("DATA_DIR") or Path(__file__).resolve().parents[2] / "data")
 BASE_URL = "https://www.football-data.co.uk/mmz4281/{season}/{league}.csv"
 INTERNATIONAL_URL = "https://raw.githubusercontent.com/martj42/international_results/master/results.csv"
+FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"  # upcoming games of 22 leagues, with odds
 REFRESH_SECONDS = 12 * 3600  # how long cached files that still change (current season) are trusted
 
 
@@ -75,8 +76,8 @@ def _parse_date(value: str) -> datetime:
     return datetime.strptime(value, "%d/%m/%Y" if len(value) == 10 else "%d/%m/%y")
 
 
-def _odds(row: dict) -> tuple[float, float, float] | None:
-    for prefix in ("PS", "B365", "BW"):
+def _odds(row: dict, prefixes: tuple[str, ...] = ("PS", "B365", "BW")) -> tuple[float, float, float] | None:
+    for prefix in prefixes:
         try:
             o = (float(row[f"{prefix}H"]), float(row[f"{prefix}D"]), float(row[f"{prefix}A"]))
         except (KeyError, ValueError):
@@ -86,8 +87,8 @@ def _odds(row: dict) -> tuple[float, float, float] | None:
     return None
 
 
-def _ou25_odds(row: dict) -> tuple[float, float] | None:
-    for prefix in ("PC", "AvgC", "P", "Avg", "B365"):  # closing prices first
+def _ou25_odds(row: dict, prefixes: tuple[str, ...] = ("PC", "AvgC", "P", "Avg", "B365")) -> tuple[float, float] | None:
+    for prefix in prefixes:  # closing prices first by default
         try:
             o = (float(row[f"{prefix}>2.5"]), float(row[f"{prefix}<2.5"]))
         except (KeyError, ValueError):
@@ -149,3 +150,38 @@ def load_international(since_year: int = 2010, exclude_friendlies: bool = False)
             continue  # fixtures without a score yet
     matches.sort(key=lambda m: m.date)
     return matches
+
+
+@dataclass
+class Fixture:
+    league: str  # football-data.co.uk code, e.g. "E0"
+    kickoff: datetime  # UK time, which is also Portugal's
+    home: str
+    away: str
+    odds: tuple[float, float, float] | None  # market average 1X2 decimal odds
+    ou25_odds: tuple[float, float] | None  # market average over/under 2.5 decimal odds
+
+
+def load_fixtures() -> list[Fixture]:
+    """Upcoming games published by football-data.co.uk (refreshed a few times a week), by kickoff."""
+    content = _cached_download(FIXTURES_URL, CACHE_DIR / "fixtures.csv", still_changing=True)
+    fixtures = []
+    for row in csv.DictReader(io.StringIO(content.decode("utf-8", errors="replace").lstrip("﻿"))):
+        try:
+            day = _parse_date(row["Date"])
+            hour, minute = (int(x) for x in (row.get("Time") or "00:00").split(":"))
+            fixtures.append(
+                Fixture(
+                    league=row["Div"].strip(),
+                    kickoff=day.replace(hour=hour, minute=minute),
+                    home=row["HomeTeam"].strip(),
+                    away=row["AwayTeam"].strip(),
+                    odds=_odds(row, ("Avg", "B365")),
+                    ou25_odds=_ou25_odds(row, ("Avg", "B365")),
+                )
+            )
+        except (KeyError, ValueError):
+            continue
+    fixtures.sort(key=lambda f: f.kickoff)
+    return fixtures
+

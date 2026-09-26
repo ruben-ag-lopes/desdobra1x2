@@ -1,28 +1,18 @@
 import { useEffect, useState } from "react";
-import {
-  getContestMatches,
-  getTotobolaDraws,
-  postDesdobramento,
-} from "../api/client";
+import { getContestMatches, getTotobolaDraws, postDesdobramento } from "../api/client";
 import { CopyButton } from "../components/CopyButton";
 import { CriteriaDialog } from "../components/CriteriaDialog";
 import { DrawInfo } from "../components/DrawInfo";
-import type {
-  DesdobramentoResponse,
-  Draw,
-  MatchInput,
-  Multipliers,
-  Outcome,
-  ResultProbabilities,
-} from "../api/types";
+import type { DesdobramentoResponse, Draw, MatchInput, Multipliers, Outcome, ResultProbabilities } from "../api/types";
 import { isCustom, loadMultipliers, saveMultipliers } from "../criteriaProfile";
+import { OUTCOMES, pickLabel, togglePick } from "../picks";
 
 interface Props {
   game: "totobola" | "totobola_extra";
   title: string;
 }
 
-function newMatch(home = "", away = ""): MatchInput {
+function newMatch(home = "", away = "", competition = ""): MatchInput {
   return {
     id: crypto.randomUUID(),
     home_team: home,
@@ -30,6 +20,7 @@ function newMatch(home = "", away = ""): MatchInput {
     home_country: "Portugal",
     away_country: "Portugal",
     competition_code: null,
+    competition,
     home_is_loaned_venue: null,
     manual_home_stats: null,
     manual_away_stats: null,
@@ -38,19 +29,7 @@ function newMatch(home = "", away = ""): MatchInput {
   };
 }
 
-const OUTCOMES: Outcome[] = ["1", "X", "2"];
 const MAX_APOSTAS = 500; // same limit as the backend (app/models.py)
-
-/** Toggle an outcome, keeping at most the two most recently chosen ones. */
-function togglePick(current: Outcome[], outcome: Outcome): Outcome[] {
-  if (current.includes(outcome)) return current.filter((o) => o !== outcome);
-  return [...current, outcome].slice(-2);
-}
-
-/** "1X", "X2"… in the site's 1-X-2 order. */
-function pickLabel(picks: Outcome[]): string {
-  return OUTCOMES.filter((o) => picks.includes(o)).join("");
-}
 
 function pickClass(picks: Outcome[]): string {
   return picks.length === 1 ? "fixed" : picks.length === 2 ? "double" : "";
@@ -62,20 +41,13 @@ function bestPick(p: ResultProbabilities): string {
   return top === p.prob_home ? "1" : top === p.prob_away ? "2" : "X";
 }
 
-function formatProb(
-  p: ResultProbabilities,
-  outcome: Outcome,
-  value: number,
-): string {
-  if (p.fixed_results.length === 2 && !p.fixed_results.includes(outcome))
-    return "—";
+function formatProb(p: ResultProbabilities, outcome: Outcome, value: number): string {
+  if (p.fixed_results.length === 2 && !p.fixed_results.includes(outcome)) return "—";
   return `${(value * 100).toFixed(1)}%`;
 }
 
 /** Model id -> numbers (1-based) of the games it predicted; fixed games are left out. */
-function modelUsage(
-  probabilities: ResultProbabilities[],
-): Map<string, number[]> {
+function modelUsage(probabilities: ResultProbabilities[]): Map<string, number[]> {
   const usage = new Map<string, number[]>();
   probabilities.forEach((p, i) => {
     if (p.fixed_results.length === 1) return;
@@ -110,17 +82,11 @@ export function TotobolaTab({ game, title }: Props) {
     setMatchesStatus("A obter jogos do concurso...");
     getContestMatches(contestId)
       .then((fixtures) => {
-        setMatches(fixtures.map((f) => newMatch(f.home_team, f.away_team)));
+        setMatches(fixtures.map((f) => newMatch(f.home_team, f.away_team, f.competition)));
         setResult(null);
-        setMatchesStatus(
-          fixtures.length ? null : "O concurso ainda não tem jogos publicados.",
-        );
+        setMatchesStatus(fixtures.length ? null : "O concurso ainda não tem jogos publicados.");
       })
-      .catch((e) =>
-        setMatchesStatus(
-          `Não foi possível obter os jogos automaticamente (${e}). Cola-os abaixo.`,
-        ),
-      );
+      .catch((e) => setMatchesStatus(`Não foi possível obter os jogos automaticamente (${e}). Cola-os abaixo.`));
   }
 
   // Fetch the official fixtures whenever the active contest changes (i.e. on app load/refresh).
@@ -129,9 +95,7 @@ export function TotobolaTab({ game, title }: Props) {
   function importBulk() {
     const parsed = bulkText
       .split(/\r?\n/)
-      .map((line) =>
-        line.split(/\s+(?:-|–|vs\.?|x)\s+|-/i).map((t) => t.trim()),
-      )
+      .map((line) => line.split(/\s+(?:-|–|vs\.?|x)\s+|-/i).map((t) => t.trim()))
       .filter((p) => p.length >= 2 && p[0] && p[1])
       .map((p) => newMatch(p[0], p.slice(1).join("-")));
     if (parsed.length) {
@@ -142,9 +106,7 @@ export function TotobolaTab({ game, title }: Props) {
   }
 
   function updateMatch(id: string, patch: Partial<MatchInput>) {
-    setMatches((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, ...patch } : m)),
-    );
+    setMatches((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   }
 
   function addMatch() {
@@ -157,11 +119,7 @@ export function TotobolaTab({ game, title }: Props) {
 
   function toggleFixed(id: string, outcome: Outcome) {
     setMatches((prev) =>
-      prev.map((m) =>
-        m.id === id
-          ? { ...m, fixed_results: togglePick(m.fixed_results, outcome) }
-          : m,
-      ),
+      prev.map((m) => (m.id === id ? { ...m, fixed_results: togglePick(m.fixed_results, outcome) } : m)),
     );
   }
 
@@ -179,12 +137,7 @@ export function TotobolaTab({ game, title }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await postDesdobramento(
-        matches,
-        nApostas,
-        activeDraw,
-        criteria,
-      );
+      const res = await postDesdobramento(matches, nApostas, activeDraw, criteria);
       setResult(res);
     } catch (e) {
       setError(String(e));
@@ -197,10 +150,7 @@ export function TotobolaTab({ game, title }: Props) {
     <div className="tab-content">
       <h2>{title}</h2>
 
-      <DrawInfo
-        draw={draws ? (activeDraw ?? null) : undefined}
-        error={drawsError}
-      />
+      <DrawInfo draw={draws ? (activeDraw ?? null) : undefined} error={drawsError} />
 
       {matchesStatus && <p className="hint">{matchesStatus}</p>}
       <div className="controls">
@@ -222,11 +172,9 @@ export function TotobolaTab({ game, title }: Props) {
 
       {matches.length > 0 && (
         <p className="hint">
-          Um resultado escolhido fica fixo em todas as apostas. Dois resultados
-          formam uma dupla: as apostas só usam esses dois. Clica outra vez para
-          desfazer.{" "}
-          {nFixed + nDouble > 0 &&
-            `${nFixed} fixo(s) · ${nDouble} dupla(s) · ${nFree} livre(s).`}
+          Um resultado escolhido fica fixo em todas as apostas. Dois resultados formam uma dupla: as apostas só usam
+          esses dois. Clica outra vez para desfazer.{" "}
+          {nFixed + nDouble > 0 && `${nFixed} fixo(s) · ${nDouble} dupla(s) · ${nFree} livre(s).`}
         </p>
       )}
 
@@ -244,11 +192,7 @@ export function TotobolaTab({ game, title }: Props) {
             value={m.away_team}
             onChange={(e) => updateMatch(m.id, { away_team: e.target.value })}
           />
-          <div
-            className="fix-toggle"
-            role="group"
-            aria-label="Escolher resultado (fixo ou dupla)"
-          >
+          <div className="fix-toggle" role="group" aria-label="Escolher resultado (fixo ou dupla)">
             {OUTCOMES.map((o) => (
               <button
                 key={o}
@@ -273,17 +217,10 @@ export function TotobolaTab({ game, title }: Props) {
             min={1}
             max={MAX_APOSTAS}
             value={nApostas}
-            onChange={(e) =>
-              setNApostas(
-                Math.min(MAX_APOSTAS, Math.max(1, Number(e.target.value) || 1)),
-              )
-            }
+            onChange={(e) => setNApostas(Math.min(MAX_APOSTAS, Math.max(1, Number(e.target.value) || 1)))}
           />
         </label>
-        <button
-          onClick={() => handleCalcular()}
-          disabled={loading || matches.length === 0}
-        >
+        <button onClick={() => handleCalcular()} disabled={loading || matches.length === 0}>
           {loading ? "A calcular..." : "Calcular"}
         </button>
       </div>
@@ -295,15 +232,11 @@ export function TotobolaTab({ game, title }: Props) {
           <div className="result-heading">
             <h3>
               Probabilidades calculadas
-              {isCustom(multipliers) && (
-                <span className="custom-tag">critérios personalizados</span>
-              )}
+              {isCustom(multipliers) && <span className="custom-tag">critérios personalizados</span>}
             </h3>
             <CriteriaDialog
               usage={modelUsage(result.probabilities)}
-              hasDouble={result.probabilities.some(
-                (p) => p.fixed_results.length === 2,
-              )}
+              hasDouble={result.probabilities.some((p) => p.fixed_results.length === 2)}
               multipliers={multipliers}
               onApply={applyCriteria}
             />
@@ -343,9 +276,7 @@ export function TotobolaTab({ game, title }: Props) {
                     >
                       <td>
                         {i + 1}. {p.home_team} vs {p.away_team}
-                        {p.low_confidence && (
-                          <span className="low-confidence"> *</span>
-                        )}
+                        {p.low_confidence && <span className="low-confidence"> *</span>}
                       </td>
                       <td>{formatProb(p, "1", p.prob_home)}</td>
                       <td>{formatProb(p, "X", p.prob_draw)}</td>
@@ -361,27 +292,20 @@ export function TotobolaTab({ game, title }: Props) {
           </div>
           {result.probabilities.some((p) => p.low_confidence) && (
             <p className="hint">
-              <span className="low-confidence">*</span> Sem histórico destas
-              equipas: estimativa pouco fiável.
+              <span className="low-confidence">*</span> Sem histórico destas equipas: estimativa pouco fiável.
             </p>
           )}
 
           <h3>Desdobramento ({result.apostas.length} apostas)</h3>
           <div className="controls">
-            <CopyButton
-              text={result.apostas.map((a) => a.join(" ")).join("\n")}
-              label="Copiar apostas (1 por linha)"
-            />
+            <CopyButton text={result.apostas.map((a) => a.join(" ")).join("\n")} label="Copiar apostas (1 por linha)" />
             <CopyButton
               text={result.apostas.map((a) => a.join("\t")).join("\n")}
               label="Copiar para folha de cálculo"
             />
             <CopyButton
               text={result.probabilities
-                .map(
-                  (p, j) =>
-                    `${j + 1}. ${p.home_team}-${p.away_team}: ${result.apostas.map((a) => a[j]).join(" ")}`,
-                )
+                .map((p, j) => `${j + 1}. ${p.home_team}-${p.away_team}: ${result.apostas.map((a) => a[j]).join(" ")}`)
                 .join("\n")}
               label="Copiar jogo a jogo"
             />
@@ -392,11 +316,7 @@ export function TotobolaTab({ game, title }: Props) {
                 <tr>
                   <th>#</th>
                   {result.probabilities.map((p, j) => (
-                    <th
-                      key={p.match_id}
-                      className={pickClass(p.fixed_results)}
-                      title={`${p.home_team}-${p.away_team}`}
-                    >
+                    <th key={p.match_id} className={pickClass(p.fixed_results)} title={`${p.home_team}-${p.away_team}`}>
                       {j + 1}
                     </th>
                   ))}
@@ -407,12 +327,7 @@ export function TotobolaTab({ game, title }: Props) {
                   <tr key={i}>
                     <td>{i + 1}</td>
                     {aposta.map((o, j) => (
-                      <td
-                        key={j}
-                        className={pickClass(
-                          result.probabilities[j].fixed_results,
-                        )}
-                      >
+                      <td key={j} className={pickClass(result.probabilities[j].fixed_results)}>
                         {o}
                       </td>
                     ))}

@@ -38,6 +38,7 @@ class MatchInput(BaseModel):
     home_country: str
     away_country: str
     competition_code: str | None = None  # football-data.org code, e.g. "PPL"; None => manual only
+    competition: str = ""  # name shown by Santa Casa, e.g. "Liga das Nações": picks the model to use
     home_is_loaned_venue: bool | None = None  # override auto-detection when set
     manual_home_stats: ManualTeamStats | None = None
     manual_away_stats: ManualTeamStats | None = None
@@ -124,3 +125,39 @@ class ModelCriteria(BaseModel):
     criterios: list[Criterion]
     dados: str = ""
     notas: list[str] = []
+
+
+class GoalMarket(BaseModel):
+    probabilidade: float
+    fonte: Literal["modelo", "media_liga"]  # the model only where it beat the league's frequency in the backtest
+
+
+class ExactScore(BaseModel):
+    casa: int
+    fora: int
+    probabilidade: float
+
+
+class FootballGame(BaseModel):
+    """An upcoming game of a covered league, with our forecast and the bookmakers' reference."""
+
+    id: str
+    competicao: str  # football-data.co.uk code, e.g. "E0"
+    competicao_nome: str
+    data: datetime
+    casa: str
+    fora: str
+    prob: list[float] | None = None  # 1, X, 2; None when the teams have too few games in the league
+    modelo: str | None = None
+    golos_esperados: list[float] | None = None  # home, away
+    mais_2_5: GoalMarket | None = None
+    ambas_marcam: GoalMarket | None = None
+    resultados_provaveis: list[ExactScore] = []
+    casas_de_apostas: list[float] | None = None  # 1, X, 2 implied by the average odds, margin removed
+    casas_mais_2_5: float | None = None
+
+
+class Competition(BaseModel):
+    codigo: str
+    nome: str
+    jogos: int  # upcoming games listed

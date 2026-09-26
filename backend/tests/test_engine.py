@@ -41,3 +41,26 @@ class DoubleTest(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
+
+class CompetitionRoutingTest(unittest.TestCase):
+    def test_most_specific_competition_name_wins(self):
+        from app.services.trained_model import NATIONS, spec_for_competition
+
+        self.assertIs(spec_for_competition("Liga das Nações"), NATIONS)
+        self.assertEqual(spec_for_competition("Liga Portugal Betclic").code, "P1")
+        self.assertIsNone(spec_for_competition("Liga Portugal 2"))  # not modelled: must not fall into P1
+        self.assertIsNone(spec_for_competition("Taça de Portugal"))
+        self.assertIsNone(spec_for_competition(""))
+
+    def test_a_club_is_active_only_if_it_played_there_last_season(self):
+        from collections import Counter
+        from datetime import datetime
+
+        from app.services.trained_model import _TeamIndex
+
+        index = _TeamIndex(
+            {}, Counter(), {"Stayed": datetime(2026, 9, 20), "Relegated": datetime(2025, 5, 18)}, datetime(2026, 9, 21)
+        )
+        self.assertTrue(index.active("Stayed"))
+        self.assertFalse(index.active("Relegated"))

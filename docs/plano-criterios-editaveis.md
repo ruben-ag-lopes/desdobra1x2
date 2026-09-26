@@ -1,6 +1,6 @@
 # Plano — Critérios editáveis pelo utilizador
 
-> **Estado (26/09/2026):** passos 1–3 feitos.
+> **Estado:** passos 1–3 feitos.
 > - **No pop-up "Critérios e pesos":** cursores de 0% a 200% por critério, "Aplicar e recalcular" e "Repor predefinidos". A escolha fica guardada no navegador e a tabela mostra a etiqueta "critérios personalizados".
 > - **Simplificações face ao plano:**
 >   - os multiplicadores são **por critério e valem para todos os modelos**, não um conjunto por modelo;

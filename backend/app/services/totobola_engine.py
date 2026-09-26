@@ -135,7 +135,9 @@ def calcular_probabilidades_lote(
 
     `multipliers` only scale the trained models; the fallbacks keep their fixed criteria.
     """
-    trained = trained_model.predict_many([(m.home_team, m.away_team) for m in matches], multipliers)
+    trained = trained_model.predict_many(
+        [(m.home_team, m.away_team) for m in matches], multipliers, [m.competition for m in matches]
+    )
     return [_trained_probabilities(m, t) or calcular_probabilidades(m) for m, t in zip(matches, trained)]
 
 

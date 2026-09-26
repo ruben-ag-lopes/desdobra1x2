@@ -1,7 +1,9 @@
 import type {
+  Competition,
   DesdobramentoResponse,
   Draw,
   FixtureInfo,
+  FootballGame,
   LotteryTicket,
   MatchInput,
   ModelCriteria,
@@ -66,4 +68,16 @@ export function generateLotteryTickets(
     method: "POST",
     body: JSON.stringify({ count }),
   });
+}
+
+export function getCompeticoes(): Promise<Competition[]> {
+  return request("/api/futebol/competicoes");
+}
+
+export function getJogos(filters: { competicao?: string; q?: string; dias?: number }): Promise<FootballGame[]> {
+  const params = new URLSearchParams();
+  if (filters.competicao) params.set("competicao", filters.competicao);
+  if (filters.q) params.set("q", filters.q);
+  if (filters.dias) params.set("dias", String(filters.dias));
+  return request(`/api/futebol/jogos?${params}`);
 }

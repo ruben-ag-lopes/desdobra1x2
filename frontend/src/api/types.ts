@@ -23,6 +23,8 @@ export interface MatchInput {
   home_country: string;
   away_country: string;
   competition_code: string | null;
+  /** Competition name from the official contest (e.g. "Liga das Nações"): picks the model. */
+  competition: string;
   home_is_loaned_venue: boolean | null;
   manual_home_stats: ManualTeamStats | null;
   manual_away_stats: ManualTeamStats | null;
@@ -81,4 +83,34 @@ export interface ModelCriteria {
   criterios: Criterion[];
   dados: string;
   notas: string[];
+}
+
+export interface GoalMarket {
+  probabilidade: number;
+  /** "media_liga": the model did not beat the league's historical frequency, so that is shown instead. */
+  fonte: "modelo" | "media_liga";
+}
+
+export interface FootballGame {
+  id: string;
+  competicao: string;
+  competicao_nome: string;
+  data: string;
+  casa: string;
+  fora: string;
+  /** 1, X, 2; null when the teams have too few games in the league. */
+  prob: number[] | null;
+  modelo: string | null;
+  golos_esperados: number[] | null;
+  mais_2_5: GoalMarket | null;
+  ambas_marcam: GoalMarket | null;
+  resultados_provaveis: { casa: number; fora: number; probabilidade: number }[];
+  casas_de_apostas: number[] | null;
+  casas_mais_2_5: number | null;
+}
+
+export interface Competition {
+  codigo: string;
+  nome: string;
+  jogos: number;
 }
