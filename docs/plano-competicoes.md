@@ -110,11 +110,36 @@ Repetir com `python -m app.research.backtest --league <código> --goals`.
 - **Painel "Boletim"** (lateral no computador, fundo do ecrã no telemóvel): jogos escolhidos, probabilidade conjunta, copiar.
 - **Reutilizar:** `CopyButton`, `CriteriaDialog`, os botões 1/X/2 (`fix-toggle`) e o tema por jogo (plano 7), com uma cor própria para o separador.
 
+### Backtest das 16 ligas novas (resultados brutos em `docs/backtests/`)
+| Liga | Frequências | Motor anterior | Nosso (modelo) | Casas | Golos: modelo ganha à frequência em |
+|---|---|---|---|---|---|
+| Championship (E1) | 1,082 | 1,084 | **1,061** Elo | 1,043 | — |
+| League One (E2) | 1,070 | 1,053 | **1,044** Elo | 1,027 | ambas marcam |
+| League Two (E3) | 1,078 | 1,062 | **1,046** Elo | 1,027 | — |
+| National League (EC) | 1,068 | 1,030 | **1,006** Elo | 0,994 | +2,5 e ambas marcam |
+| Premiership (SC0) | 1,073 | 0,989 | **0,979** Elo | 0,971 | +2,5 e ambas marcam |
+| Scottish Championship (SC1) | 1,091 | 1,068 | **1,059** Elo | 1,053 | — |
+| Scottish League One (SC2) | 1,082 | 1,068 | **1,052** Elo | 1,008 | +2,5 |
+| Scottish League Two (SC3) | 1,081 | 1,089 | **1,069** Poisson | 1,058 | +2,5 e ambas marcam |
+| 2. Bundesliga (D2) | 1,067 | 1,069 | **1,052** Elo | 1,035 | — |
+| Serie B (I2) | 1,071 | 1,025 | 1,027 Elo | 1,014 | +2,5 |
+| LaLiga 2 (SP2) | 1,080 | 1,063 | **1,055** Poisson | 1,029 | +2,5 |
+| Ligue 2 (F2) | 1,105 | 1,117 | **1,082** Elo | 1,061 | — |
+| Eredivisie (N1) | 1,081 | 0,995 | **0,982** Elo | 0,970 | +2,5 |
+| Liga belga (B1) | 1,078 | 1,040 | **1,014** Elo | 1,000 | — |
+| Liga turca (T1) | 1,085 | 1,022 | **1,011** Poisson | 0,979 | +2,5 |
+| Liga grega (G1) | 1,084 | 0,975 | **0,962** Elo | 0,943 | +2,5 |
+
+Conclusões:
+- Em 15 das 16 ligas o modelo treinado melhora o motor anterior. A exceção é a Serie B (1,027 contra 1,025, empate técnico).
+- As casas de apostas continuam à frente em todas.
+- Nas divisões baixas os mercados de golos quase nunca batem a média da liga, e a app mostra então a média, identificada como tal.
+
 ## Passos
 1. ✅ Carregamento genérico de ligas e backtest por liga (tabela acima).
 2. 🔨 Domínios por liga no `trained_model`: **feito para o 1X2** nas 6 ligas (P1, E0, SP1, I1, D1, F1). O Totobola já os usa quando aparecem jogos destas ligas. As previsões saem de um estado guardado (0,03 s por cálculo). Mercados de golos já validados no backtest (tabela acima). Falta expô-los na API, com a regra de só mostrar os que ganham.
-3. Pesquisa de jogos (`fixtures.csv`) com nomes normalizados e aliases.
-4. Endpoints + separador "Futebol" (lista, cartão, boletim).
+3. ✅ Pesquisa de jogos (`fixtures.csv`) com nomes normalizados e sinónimos (testes em `tests/test_futebol.py`).
+4. ✅ Endpoints `GET /api/futebol/competicoes` e `/jogos` + separador "Futebol": lista por dia, cartão com 1X2 nosso e das casas, golos, resultados prováveis e boletim com a probabilidade conjunta. Falta `GET /jogos/{id}` e `POST /boletim` (hoje o boletim é calculado no navegador).
 5. Elo entre ligas + competições europeias (fase 3).
 6. Registo das previsões e resultados na base de dados (plano 4) para medir o acerto por liga e por mercado.
 

@@ -1,6 +1,15 @@
 # Plano — Análise de jogos: principais ligas internacionais e todas as ligas portuguesas
 
-> Só plano, sem implementação. Complementa o `plano-competicoes.md` (separador "Futebol", mercados de golos, boletim). Este plano trata da **cobertura**: que ligas, de onde vêm os dados e como se modelam, reaproveitando o que já foi feito para o Totobola.
+> **Estado:** as ligas do football-data.co.uk estão feitas (22 ligas com modelo e backtest). Falta tudo o que depende da API-Football: Liga 2, Liga 3, Campeonato de Portugal e taças.
+>
+> **Feito:**
+> - Europa 1.ª fase: Championship, 2. Bundesliga, Serie B, LaLiga 2, Ligue 2, Eredivisie, Bélgica, Turquia, Grécia, Escócia (4 divisões) e mais três divisões inglesas.
+> - Cada liga tem o seu modelo, escolhido no backtest.
+> - O Totobola escolhe o modelo pela competição que a Santa Casa indica, e sem essa informação só usa uma liga se os dois clubes jogaram lá na época passada.
+>
+> **Por fazer:**
+> - Fora da Europa (Brasil, Argentina, EUA, México, Japão) e a 2.ª fase da Europa (Suécia, Noruega, Dinamarca, Áustria, Suíça, Polónia): os ficheiros existem, mas têm outro formato e outra lógica de época (ano civil).
+> - Tudo o que precisa da chave da API-Football. Complementa o `plano-competicoes.md` (separador "Futebol", mercados de golos, boletim). Este plano trata da **cobertura**: que ligas, de onde vêm os dados e como se modelam, reaproveitando o que já foi feito para o Totobola.
 
 ## Porque é prioritário
 Os concursos do Totobola incluem muitas vezes jogos da **Liga 2, Liga 3 e Campeonato de Portugal**. Hoje esses jogos caem no método "pouco fiável" (probabilidades perto de 1/3). Cobrir estas ligas melhora já o Totobola, antes de existir o separador "Futebol".
