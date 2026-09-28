@@ -94,7 +94,7 @@ Um passo novo (forma, confronto direto, Dixon–Coles, …) só entra na app se 
 | `FOOTBALL_DATA_API_KEY` | backend | dados de equipas via football-data.org (opcional) |
 | `GCP_PROJECT`, `BQ_DATASET` | backend | guardar previsões no BigQuery (opcional) |
 | `VITE_API_URL` | frontend | endereço da API quando não é o mesmo domínio |
-| `VITE_BUYMEACOFFEE_URL`, `VITE_PAYPAL_URL` | frontend | ligações do botão de apoio (`frontend/.env.example`) |
+| `VITE_BUYMEACOFFEE_URL` | frontend | ligação do botão de apoio (`frontend/.env.example`) |
 
 ## BigQuery (opcional)
 Instala o extra (`pip install -r requirements-optional.txt`) e define `GCP_PROJECT` e `BQ_DATASET` (credenciais via `gcloud auth application-default login`). A app passa a guardar cada previsão mostrada na tabela `predictions` (concurso, data, equipas, probabilidades, resultado fixo, versão do modelo), e `backtest ... --bigquery` guarda todas as previsões do teste em `backtest_predictions`. Sem as variáveis não escreve nada.

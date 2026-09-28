@@ -24,7 +24,9 @@
 - PTISP: ≈ 49,50 €;
 - Dominios.pt: ≈ 66,80 € + IVA.
 
-**Recomendação:** Site.pt (ou quem tiver a renovação mais barata na altura), registado **por 1 ano** para não ficar preso. Antes de pagar, confirma o preço de renovação e se o valor inclui IVA.
+**Recomendação (custo total mais baixo em 3 anos):** Site.pt.
+
+**Recomendação (mais barato só no 1.º ano — decisão de 29/09/2026):** confirmado de novo hoje, a Dominios.pt continua a anunciar **1 € + IVA no 1.º ano** (≈ 1,23 € com IVA a 23%), com renovação de **32 € + IVA/ano** (≈ 39,36 €) a partir do 2.º ano. Como preferes o mais barato já e aceitas pagar mais depois, é esta a opção. Página de registo: dominios.pt/registar/dominios-pt/. O 1.º ano inclui 1 GB de alojamento, um site de uma página e 1 conta de e-mail — não precisas de usar isso, o site vai continuar no Vercel.
 
 ## Custos totais do 1.º ano
 | Item | Custo |
@@ -53,7 +55,7 @@ O Cloudflare não regista `.pt`, mas pode gerir o DNS de um `.pt` registado nout
 3. Publicar a app no Vercel (`plano-publicacao-vercel.md`) e, no projeto, **Settings → Domains → Add** `desdobra1x2.pt` e `www.desdobra1x2.pt`, com o `www` a redirecionar para o domínio raiz.
 4. Criar os registos DNS indicados pelo Vercel (opção A) ou mudar os *nameservers* (opção B/C).
 5. Esperar a propagação (minutos a algumas horas). O Vercel emite o certificado HTTPS sozinho.
-6. Opcional (opção B): Cloudflare Email Routing `contacto@desdobra1x2.pt` para o teu e-mail pessoal, para usar nas páginas legais, no Buy Me a Coffee e no PayPal.
+6. Opcional (opção B): Cloudflare Email Routing `contacto@desdobra1x2.pt` para o teu e-mail pessoal, para usar nas páginas legais e no Buy Me a Coffee.
 7. Ativar a renovação automática, ou pôr um lembrete um mês antes do fim do prazo.
 
 ## Opcional

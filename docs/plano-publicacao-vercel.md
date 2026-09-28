@@ -55,7 +55,7 @@ Um único projeto Vercel com **Services** (em beta): o frontend (Vite) serve `/`
 | `GCP_PROJECT`, `BQ_DATASET` | api | opcional (BigQuery) |
 | `DATABASE_URL` | api | plano 4 |
 | `VITE_API_URL` | web | vazio (mesmo domínio) ou o URL do backend |
-| `VITE_BUYMEACOFFEE_URL`, `VITE_PAYPAL_URL` | web | links reais |
+| `VITE_BUYMEACOFFEE_URL` | web | https://www.buymeacoffee.com/desdobra1x2 |
 
 ## Domínio e aspetos legais
 - **Domínio próprio** (ex.: `.pt` num registador da DNS.pt). **Não usar "santacasa"** no domínio nem no nome, por ser uma marca de terceiros.

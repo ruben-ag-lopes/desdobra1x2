@@ -25,10 +25,8 @@ O Vercel e o Cloudflare não vendem `.pt`, por isso registas num registador port
 
 Detalhes e alternativas (e-mail `contacto@desdobra1x2.pt` grátis com Cloudflare): [plano-dominio.md](plano-dominio.md).
 
-## 4. Donativos (20 min)
-- **Buy Me a Coffee:** buymeacoffee.com → Sign up → escolhe o nome da página → liga a conta de pagamentos (Stripe ou PayPal). O link fica `buymeacoffee.com/<nome>`.
-- **PayPal.Me:** paypal.com/paypalme → cria o teu link, `paypal.me/<nome>`.
-- Depois pões os dois em `frontend/.env.local` (local) e nas variáveis do Vercel: `VITE_BUYMEACOFFEE_URL` e `VITE_PAYPAL_URL`. Envia-me os links e faço eu.
+## 4. Donativos — ✅ feito
+Buy Me a Coffee ativo: buymeacoffee.com/desdobra1x2. O link está em `frontend/.env.local` (local); falta pôr a mesma variável `VITE_BUYMEACOFFEE_URL` nas variáveis de ambiente do Vercel quando publicares (plano 2). Só este método de apoio — sem PayPal.
 
 ## 5. API-Football — ✅ conta criada
 A chave está em `backend/.env` (`API_FOOTBALL_KEY`, fora do Git). Confirmei que a mesma chave dá acesso gratuito (100 pedidos/dia cada) a futebol, basquetebol, NBA, Fórmula 1, MMA, râguebi, voleibol e andebol. Falta o código que a usa, com uma única atualização por dia (plano 13). Quando publicarmos, a chave vai também para as variáveis do Vercel.
@@ -52,7 +50,7 @@ A alternativa é continuar só com o BigQuery, que dá mais trabalho e custos em
 | 1 | GitHub | feito | 0 € | tudo o resto |
 | 2 | Vercel | 10 min | 0 € | app online |
 | 3 | Domínio `.pt` | 15 min | ~12–17 €/ano | endereço próprio |
-| 4 | Buy Me a Coffee e PayPal.Me | 20 min | 0 € | donativos |
+| 4 | Buy Me a Coffee | feito | 0 € | donativos |
 | 5 | API-Football | feito | 0 € | ligas portuguesas |
 | 6 | Neon (Postgres) | 15 min | 0 € | acerto das previsões |
 | 7 | Decisões | — | — | visual e anúncios |

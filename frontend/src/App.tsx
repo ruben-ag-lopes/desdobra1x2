@@ -25,13 +25,17 @@ const OTHER_SPORTS = [
   { id: "andebol", label: "Andebol" },
 ] as const;
 
-const SECTIONS = [
+const ALL_SECTIONS = [
   { id: "santacasa", label: "Jogos Santa Casa" },
   { id: "futebol", label: "Futebol" },
   { id: "desportos", label: "Outros desportos" },
 ] as const;
 
-type Section = (typeof SECTIONS)[number]["id"];
+// Futebol and Outros desportos hidden for now (user request, 2026-09-29): flip this back to
+// ALL_SECTIONS to bring them back — the tabs' own code is untouched.
+const SECTIONS = ALL_SECTIONS.filter((s) => s.id === "santacasa");
+
+type Section = (typeof ALL_SECTIONS)[number]["id"];
 type GameId = (typeof SANTA_CASA_GAMES)[number]["id"];
 type SportId = (typeof OTHER_SPORTS)[number]["id"];
 
@@ -52,23 +56,25 @@ function App() {
       </header>
 
       <aside className="warning-banner" role="note" aria-label="Aviso importante">
-        <strong>⚠ Aviso:</strong> as previsões do Totobola e do Futebol são meramente estatísticas e os números do
-        Totoloto, Euromilhões e EuroDreams são gerados aleatoriamente.{" "}
-        <strong>Não há qualquer garantia de acerto.</strong> Joga com responsabilidade — maiores de 18 anos.
+        <strong>⚠ Aviso:</strong> as previsões do Totobola são meramente estatísticas e os números do Totoloto,
+        Euromilhões e EuroDreams são gerados aleatoriamente. <strong>Não há qualquer garantia de acerto.</strong> Joga
+        com responsabilidade — maiores de 18 anos.
       </aside>
 
-      <nav className="sections" aria-label="Secções">
-        {SECTIONS.map((t) => (
-          <button
-            key={t.id}
-            className={section === t.id ? "active" : ""}
-            aria-pressed={section === t.id}
-            onClick={() => setSection(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      {SECTIONS.length > 1 && (
+        <nav className="sections" aria-label="Secções">
+          {SECTIONS.map((t) => (
+            <button
+              key={t.id}
+              className={section === t.id ? "active" : ""}
+              aria-pressed={section === t.id}
+              onClick={() => setSection(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {section === "santacasa" && (
         <nav className="tabs" aria-label="Jogos Santa Casa">

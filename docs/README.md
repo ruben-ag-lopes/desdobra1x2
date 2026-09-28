@@ -11,7 +11,7 @@ O que já funciona em http://localhost:5173: Totobola e Totobola Extra (com fixo
 |---|---|---|---|
 | 3 | Publicar no Vercel | conta Vercel (o GitHub já está) | [plano-publicacao-vercel.md](plano-publicacao-vercel.md) |
 | 4 | Base de dados de resultados e acerto das previsões | escolha da base de dados | [plano-base-de-dados.md](plano-base-de-dados.md) |
-| 5 | Links reais de donativos; anúncios (fases 2 e 3) | contas Buy Me a Coffee e PayPal | [plano-anuncios-e-apoios.md](plano-anuncios-e-apoios.md) |
+| 5 | Donativos ✅ feito (Buy Me a Coffee); anúncios (fases 2 e 3) | — | [plano-anuncios-e-apoios.md](plano-anuncios-e-apoios.md) |
 | 6 | Futebol: competições europeias, seleções, previsões pré-calculadas | tarefa diária (plano 4) | [plano-competicoes.md](plano-competicoes.md) |
 | 7 | Novo visual | a tua aprovação da [maquete](https://claude.ai/artifact/K1C5CQPMKxTyRo3Koe2dD5) | [plano-design.md](plano-design.md) |
 | 10 | Domínio `desdobra1x2.pt` | registador | [plano-dominio.md](plano-dominio.md) |

@@ -1,10 +1,7 @@
-# Plano 5 — Anúncios e apoios (Buy Me a Coffee / PayPal)
+# Plano 5 — Anúncios e apoios (Buy Me a Coffee)
 
-## Por fazer (tu): links do botão de apoio
-O rodapé já tem o botão **"☕ Apoiar o projeto"** com Buy Me a Coffee e PayPal. Falta pôr os links reais:
-- criar a página no buymeacoffee.com;
-- no PayPal, criar um link PayPal.Me (mais simples) ou um botão "Donate";
-- pôr os dois links em `frontend/.env.local` (local) e nas variáveis do Vercel (produção): `VITE_BUYMEACOFFEE_URL` e `VITE_PAYPAL_URL`. Sem eles, os botões apontam para as páginas iniciais dos serviços.
+## Donativos — ✅ feito
+O rodapé tem o botão **"☕ Apoiar o projeto"**, a apontar para buymeacoffee.com/desdobra1x2 (`VITE_BUYMEACOFFEE_URL` em `frontend/.env.local`). Decidido usar só Buy Me a Coffee, sem PayPal. Falta só pôr a mesma variável nas variáveis de ambiente do Vercel quando publicares (plano 3).
 
 ## O que condiciona os anúncios
 1. **Vercel:** o plano gratuito (Hobby) proíbe anúncios, porque contam como uso comercial. Donativos são permitidos. Com anúncios é preciso o plano **Pro** (pago).
@@ -37,6 +34,5 @@ O rodapé já tem o botão **"☕ Apoiar o projeto"** com Buy Me a Coffee e PayP
 5. Medir o impacto na velocidade (Core Web Vitals no Vercel Analytics) antes e depois.
 
 ## Decisões pendentes (tuas)
-- Links reais do Buy Me a Coffee e do PayPal.
 - Aceitar ou não publicidade de apostas (decisão de posicionamento e jurídica).
 - Nome e domínio próprios, sem "Santa Casa" (ver o plano 7).
