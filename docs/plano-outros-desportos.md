@@ -1,45 +1,47 @@
 # Plano — Mercados de previsão para basquetebol, andebol, ténis e voleibol
 
-> Estado: separadores criados ("Outros desportos": Basquetebol, NBA, Fórmula 1, MMA, Râguebi, Voleibol,
-> Andebol), todos com uma página "em preparação" — **sem dados nem modelo ligados ainda**. Confirmámos
-> (26/09/2026) que a tua chave da API-Football dá acesso gratuito (100 pedidos/dia cada) a todos estes
-> desportos, mas ainda não foi escrita nenhuma integração: combinaste que ligas tu próprio as APIs.
+> **Investigado (27/09/2026): bloqueio real, não de código.** A tua chave API-Sports está confirmada a funcionar
+> (`plan: Free`, ativa) para basquetebol, andebol e voleibol, mas o **plano gratuito destes desportos só dá
+> acesso a jogos de hoje, ontem e amanhã** (`GET /games?date=...`) — qualquer data fora dessa janela de 3 dias
+> devolve erro `"Free plans do not have access to this date"`. O mesmo acontece ao pedir por época
+> (`season=2025-2026` → erro, só aceita 2022–2024, mas os jogos de hoje já não pertencem a essas épocas) ou por
+> "últimos N jogos de uma equipa" (`last=10` → bloqueado de propósito). **Não há forma de obter histórico**, e
+> sem histórico não há como calcular a força das equipas (Elo, médias de pontos, nada). Isto é diferente do
+> futebol: a tua chave de futebol (`v3.football.api-sports.io`) tem acesso normal a 8 épocas de histórico.
 
-Este plano define os mercados a mostrar assim que cada desporto tiver dados ligados, para o trabalho de integração já saber o alvo.
+## O que isto significa
+Não é possível construir qualquer modelo de previsão real para basquetebol, andebol ou voleibol com o plano
+gratuito atual. Os separadores destes desportos continuam com a página "em preparação".
 
-## Mercados por desporto
+## Opções
+1. **Upgrade a um plano pago da API-Sports** (não consegui obter os preços automaticamente — `api-sports.io/pricing` bloqueou o pedido; confirma manualmente no teu painel em dashboard.api-football.com, secção do desporto em causa). Depois disso, o plano técnico abaixo aplica-se sem alterações.
+2. **Outra fonte de dados histórica e gratuita** para pelo menos um destes desportos (ex.: um ficheiro de resultados históricos como os que usamos para futebol, football-data.co.uk). Não encontrei nenhuma equivalente óbvia para basquetebol/andebol/voleibol; precisaria de pesquisa dedicada.
+3. **Ficar só com "jogos de hoje" sem previsão própria**, mostrando quando muito o calendário do dia (sem 1X2 nem pontos), o que tem pouco valor por si só.
+
+**Recomendação:** não avançar com nenhum destes desportos até teres decidido entre 1 e 2. Não vale a pena escrever código de um modelo que não tem dados para treinar.
+
+## Mercados (mantido para quando houver dados)
 | Desporto | Mercado principal (equivalente ao 1X2) | Linhas de pontos/sets |
 |---|---|---|
 | Basquetebol / NBA | Vencedor (sem empate: 1/2, ou spread) | Total de pontos (over/under, ex.: 215,5); diferença de pontos (spread) |
 | Andebol | Vencedor (1X2, o empate existe) | Total de golos (over/under, ex.: 55,5) |
-| Ténis | Vencedor do encontro | Total de sets; hándicap de sets; total de jogos (games) |
 | Voleibol | Vencedor do encontro (sem empate) | Total de sets (melhor de 3 ou de 5); total de pontos por set |
+| Ténis | Vencedor do encontro | Total de sets; hándicap de sets; total de jogos (games) — **não está nos separadores da app nem coberto pela tua chave API-Sports**; ficaria para um fornecedor à parte |
 
-Mesma lógica dos golos no futebol: um mercado só aparece na app **depois de validado num backtest** (log loss menor do que prever sempre a média histórica), com a mesma regra de mostrar "média da categoria" quando o modelo não ganha.
+## Modelo estatístico (proposta, sem alterações face à ideia original)
+- **Vencedor sem empate** (basquetebol, voleibol): Elo calibrado, igual ao futebol, sem a componente de empate.
+- **Totais de pontos/golos** (basquetebol, andebol): Poisson, trocando "golos" por "pontos"/"golos de andebol" — a `PoissonModel` já é genérica à escala, só muda o `MAX_GOALS` por desporto.
+- **Sets de voleibol:** modelo de "melhor de N", não reaproveita o Poisson diretamente.
 
-## Modelo estatístico (reaproveitar o que já existe)
-- **Vencedor sem empate** (basquetebol, voleibol, ténis): o mesmo Elo calibrado já usado no futebol serve, trocando só a fórmula final por uma probabilidade de vencedor único (sem a componente de empate).
-- **Totais de pontos/golos** (basquetebol, andebol): o mesmo modelo de Poisson do futebol, trocando "golos" por "pontos" ou "golos de andebol" — a machinery (`app/research/models.py`, `PoissonModel`) já é genérica a qualquer contagem de eventos, só muda a escala (pontos de basquetebol chegam a 100+, por isso `MAX_GOALS` teria de ser paramétrico por desporto).
-- **Sets de ténis/voleibol:** mais parecido a uma série "melhor de N" do que a golos — precisa de um modelo próprio (probabilidade de ganhar um set, depois combinar em "melhor de 3/5"), não reaproveita diretamente o Poisson.
+## F1 e MMA
+Já confirmámos (sessão anterior) que a tua chave cobre F1 e MMA, mas são corrida/combate, sem "1X2" nem "linhas de pontos" — precisam de um modelo próprio (pódio, vitória por nocaute vs. decisão) e ficam fora do âmbito deste plano.
 
-## Dados
-A tua chave da API-Football (API-Sports) cobre:
-- `v1.basketball.api-sports.io` — jogos, resultados, classificações.
-- `v2.nba.api-sports.io` — específico da NBA.
-- `v1.handball.api-sports.io`
-- `v1.volleyball.api-sports.io`
-- Ténis e Fórmula 1/MMA **não têm cobertura no mesmo fornecedor** (API-Sports não tem `tennis`/`mma`/`formula-1` no plano gratuito verificado) — confirmar se há um plano/fornecedor alternativo antes de prometer estes dois.
-
-## Passos (quando a integração das APIs estiver feita)
-1. Confirmar quais destes desportos a tua chave realmente cobre com dados suficientes (histórico + próximos jogos).
-2. Escolher **um desporto para começar** (sugestão: Basquetebol ou Andebol, por reaproveitarem mais código do futebol).
+## Passos (só depois de resolvido o acesso a histórico)
+1. Confirmar o histórico disponível no plano escolhido (quantas épocas, que competições).
+2. Escolher um desporto para começar (Basquetebol ou Andebol, por reaproveitarem mais código do futebol).
 3. Backtest do vencedor e das linhas de pontos, com a mesma disciplina do futebol (docs/backtests/).
-4. Trocar a página "em preparação" pelo separador real, reaproveitando `FutebolTab.tsx` como modelo (pesquisa, cartão de jogo, boletim, pop-up de critérios).
-5. Repetir por desporto.
-
-## Nota sobre F1 e MMA
-Fórmula 1 e MMA não têm um "1X2" nem "linhas de pontos" — são eventos de corrida/combate. Precisam de um modelo diferente (ex.: probabilidade de pódio, de vitória por nocaute vs. decisão) e ficam fora do âmbito deste plano; merecem um plano próprio quando chegar a vez.
+4. Trocar a página "em preparação" pelo separador real, reaproveitando `FutebolTab.tsx` como modelo.
 
 ## Verificação
-- Antes de mostrar qualquer previsão de um novo desporto: log loss do modelo escolhido menor do que as frequências históricas, no backtest desse desporto.
+- Antes de mostrar qualquer previsão: log loss do modelo escolhido menor do que as frequências históricas, no backtest desse desporto.
 - Mesma regra do futebol: nunca anunciar "aposta de valor" sem bater as casas de apostas num backtest com amostra suficiente.
