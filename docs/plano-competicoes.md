@@ -1,6 +1,6 @@
 # Plano 6 — Futebol: o que falta
 
-O separador "Futebol" já existe: pesquisa por equipa e competição, 1X2 nosso e das casas, golos, resultados prováveis e boletim, para 22 ligas. Os resultados dos backtests estão em [backtests/README.md](backtests/README.md).
+O separador "Futebol" já existe: pesquisa por equipa e competição, 1X2 nosso e das casas, golos, resultados prováveis e boletim, para 22 ligas. Tem também o mesmo editor de critérios (multiplicadores) do Totobola, e mostra "mais de 1,5"/"mais de 3,5" golos como informação (não validadas no backtest, só "mais de 2,5" e "ambas marcam" o são). Os resultados dos backtests estão em [backtests/README.md](backtests/README.md).
 
 ## Falta fazer
 1. **Competições europeias** (Liga dos Campeões, Liga Europa, Conference League), com calendário e horários.

@@ -65,13 +65,25 @@ export interface FixtureInfo {
 
 export type CriterionId = "elo" | "casa" | "ataque" | "defesa" | "h2h";
 
-/** User-scaled criteria: 1 = default, 0 = ignored, 2 = doubled. Missing = 1. */
+/** User-scaled criteria of the trained models: 1 = default, 0 = ignored, 2 = doubled. Missing = 1. */
 export type Multipliers = Partial<Record<CriterionId, number>>;
+
+/** Fallback ("criterios-v0") criteria: shares of 100%, unlike the multipliers above. */
+export type LegacyCriterionId = "forma" | "ranking_uefa" | "ultimos2" | "confronto_direto" | "classificacao";
+
+/** Direct share per legacy criterion (0-1). Missing = the model's own default. */
+export type LegacyWeights = Partial<Record<LegacyCriterionId, number>>;
+
+/** Every user-editable criterion sent in a desdobramento request. */
+export interface Criteria {
+  multiplicadores: Multipliers;
+  pesosAntigos: LegacyWeights;
+}
 
 export interface Criterion {
   nome: string;
-  /** Set when the user can scale this criterion. */
-  id: CriterionId | null;
+  /** Set when the user can scale this criterion: a CriterionId or a LegacyCriterionId. */
+  id: string | null;
   peso: number | null;
   detalhe: string;
 }
@@ -102,7 +114,9 @@ export interface FootballGame {
   prob: number[] | null;
   modelo: string | null;
   golos_esperados: number[] | null;
+  mais_1_5: number | null; // informational only, not backtested
   mais_2_5: GoalMarket | null;
+  mais_3_5: number | null; // informational only, not backtested
   ambas_marcam: GoalMarket | null;
   resultados_provaveis: { casa: number; fora: number; probabilidade: number }[];
   casas_de_apostas: number[] | null;

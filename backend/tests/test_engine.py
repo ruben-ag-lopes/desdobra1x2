@@ -5,13 +5,35 @@ import unittest
 from pydantic import ValidationError
 
 from app.models import DesdobramentoRequest, MatchInput, ResultProbabilities
-from app.services.totobola_engine import _apply_double, _double_counts
+from app.services.totobola_engine import _allocate_counts, _apply_double, _double_counts
 
 
 def _probs(home: float, draw: float, away: float) -> ResultProbabilities:
     return ResultProbabilities(
         match_id="m", home_team="A", away_team="B", prob_home=home, prob_draw=draw, prob_away=away, criteria_breakdown={}
     )
+
+
+class AllocationTest(unittest.TestCase):
+    def test_a_close_draw_still_gets_bets(self):
+        # Kosovo-Áustria, 2026-09-28: 1/X/2 nearly tied (35/29/36). The draw must not be
+        # dropped to zero just because it's the third-ranked outcome.
+        counts = _allocate_counts({"1": 0.3519, "X": 0.2905, "2": 0.3576}, 6)
+        self.assertEqual(sum(counts.values()), 6)
+        self.assertGreater(counts["X"], 0)
+        # Roughly proportional: within 1 bet of each outcome's exact share.
+        for outcome, p in (("1", 0.3519), ("X", 0.2905), ("2", 0.3576)):
+            self.assertAlmostEqual(counts[outcome], p * 6, delta=1)
+
+    def test_counts_always_sum_to_n(self):
+        for n in range(1, 10):
+            counts = _allocate_counts({"1": 0.34, "X": 0.33, "2": 0.33}, n)
+            self.assertEqual(sum(counts.values()), n)
+
+    def test_runner_up_gets_at_least_one_bet_when_no_outcome_reaches_50_percent(self):
+        counts = _allocate_counts({"1": 0.40, "X": 0.35, "2": 0.25}, 2)
+        self.assertEqual(sum(counts.values()), 2)
+        self.assertGreater(counts["X"], 0)  # runner-up, must not be shut out
 
 
 class DoubleTest(unittest.TestCase):
@@ -41,6 +63,27 @@ class DoubleTest(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
+
+class LegacyWeightsRequestTest(unittest.TestCase):
+    def _request(self, **pesos_antigos):
+        return dict(matches=[], n_apostas=1, pesos_antigos=pesos_antigos)
+
+    def test_sum_over_100_percent_is_rejected(self):
+        with self.assertRaises(ValidationError):
+            DesdobramentoRequest(**self._request(forma=0.9, ranking_uefa=0.2))
+
+    def test_a_single_criterion_over_100_percent_is_rejected(self):
+        with self.assertRaises(ValidationError):
+            DesdobramentoRequest(**self._request(forma=1.5))
+
+    def test_unknown_legacy_criterion_is_rejected(self):
+        with self.assertRaises(ValidationError):
+            DesdobramentoRequest(**self._request(inventado=0.1))
+
+    def test_sum_at_exactly_100_percent_is_accepted(self):
+        req = DesdobramentoRequest(**self._request(forma=0.4, ranking_uefa=0.3, ultimos2=0.15, confronto_direto=0.1, classificacao=0.05))
+        self.assertAlmostEqual(sum(req.pesos_antigos.values()), 1.0)
 
 
 class CompetitionRoutingTest(unittest.TestCase):

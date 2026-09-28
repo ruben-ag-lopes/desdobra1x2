@@ -36,7 +36,9 @@ def desdobramento(req: DesdobramentoRequest, background: BackgroundTasks):
     if not req.matches:
         raise HTTPException(status_code=400, detail="No matches provided")
 
-    probabilities, apostas = totobola_engine.gerar_desdobramento(req.matches, req.n_apostas, req.multiplicadores)
+    probabilities, apostas = totobola_engine.gerar_desdobramento(
+        req.matches, req.n_apostas, req.multiplicadores, req.pesos_antigos, req.bonus_casa
+    )
     background.add_task(bigquery.log_predictions, probabilities, req.concurso, req.data_sorteio)
     return DesdobramentoResponse(probabilities=probabilities, apostas=apostas)
 

@@ -50,17 +50,37 @@ _STATIC = {
             "e as probabilidades ficam próximas de um terço cada."
         ),
         criterios=[
-            Criterion(nome="Forma recente (últimos 5 jogos)", peso=engine.WEIGHT_RECENT_FORM),
-            Criterion(nome="Ranking UEFA do país", peso=engine.WEIGHT_UEFA_RANKING),
             Criterion(
+                id="forma",
+                nome="Forma recente (últimos 5 jogos)",
+                peso=engine.LEGACY_WEIGHTS_DEFAULT["forma"],
+            ),
+            Criterion(
+                id="ranking_uefa", nome="Ranking UEFA do país", peso=engine.LEGACY_WEIGHTS_DEFAULT["ranking_uefa"]
+            ),
+            Criterion(
+                id="ultimos2",
                 nome="Últimos 2 jogos na competição",
-                peso=engine.WEIGHT_LAST2_COMPETITION,
+                peso=engine.LEGACY_WEIGHTS_DEFAULT["ultimos2"],
                 detalhe="Redistribuído pelos outros critérios quando não há 2 jogos.",
             ),
-            Criterion(nome="Confronto direto", peso=engine.WEIGHT_H2H),
-            Criterion(nome="Classificação no campeonato", peso=engine.WEIGHT_DOMESTIC_STANDING),
+            Criterion(
+                id="confronto_direto",
+                nome="Confronto direto (últimos 5 anos)",
+                peso=engine.LEGACY_WEIGHTS_DEFAULT["confronto_direto"],
+            ),
+            Criterion(
+                id="classificacao",
+                nome="Classificação no campeonato doméstico",
+                peso=engine.LEGACY_WEIGHTS_DEFAULT["classificacao"],
+            ),
         ],
-        notas=[f"A equipa da casa recebe um bónus de {engine.HOME_ADVANTAGE_BONUS:.0%} na força."],
+        notas=[
+            f"A equipa da casa recebe um bónus de {engine.HOME_ADVANTAGE_BONUS_DEFAULT:.0%} na força, exceto "
+            "quando joga em casa emprestada (ex.: Torreense, Casa Pia, Lourosa).",
+            "Estes 5 pesos são uma partilha de 100%: a soma nunca pode ultrapassar 100% e nenhum pode sozinho "
+            "ultrapassar 100%.",
+        ],
     ),
 }
 

@@ -1,5 +1,6 @@
 import type {
   Competition,
+  Criteria,
   DesdobramentoResponse,
   Draw,
   FixtureInfo,
@@ -42,7 +43,7 @@ export function postDesdobramento(
   matches: MatchInput[],
   n_apostas: number,
   draw?: { concurso: string; data_sorteio: string | null },
-  multiplicadores: Multipliers = {},
+  criteria: Criteria = { multiplicadores: {}, pesosAntigos: {} },
 ): Promise<DesdobramentoResponse> {
   return request("/api/totobola/desdobramento", {
     method: "POST",
@@ -51,7 +52,8 @@ export function postDesdobramento(
       n_apostas,
       concurso: draw?.concurso,
       data_sorteio: draw?.data_sorteio,
-      multiplicadores,
+      multiplicadores: criteria.multiplicadores,
+      pesos_antigos: criteria.pesosAntigos,
     }),
   });
 }
@@ -74,10 +76,14 @@ export function getCompeticoes(): Promise<Competition[]> {
   return request("/api/futebol/competicoes");
 }
 
-export function getJogos(filters: { competicao?: string; q?: string; dias?: number }): Promise<FootballGame[]> {
+export function getJogos(
+  filters: { competicao?: string; q?: string; dias?: number },
+  multiplicadores: Multipliers = {},
+): Promise<FootballGame[]> {
   const params = new URLSearchParams();
   if (filters.competicao) params.set("competicao", filters.competicao);
   if (filters.q) params.set("q", filters.q);
   if (filters.dias) params.set("dias", String(filters.dias));
+  if (Object.keys(multiplicadores).length > 0) params.set("criterios", JSON.stringify(multiplicadores));
   return request(`/api/futebol/jogos?${params}`);
 }

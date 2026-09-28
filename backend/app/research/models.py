@@ -142,12 +142,14 @@ class PoissonModel:
         return grid / grid.sum(axis=(1, 2), keepdims=True)
 
     def goal_markets(self, rows: Rows) -> dict[str, np.ndarray]:
-        """P(over 2.5 goals) and P(both teams score), from the score grid."""
+        """P(over N.5 goals) for N in {1, 2, 3} and P(both teams score), from the score grid."""
         grid = self.score_grid(rows)
         g = np.arange(MAX_GOALS + 1)
         total = g[:, None] + g[None, :]
         return {
+            "over15": grid[:, total >= 2].sum(axis=1),
             "over25": grid[:, total >= 3].sum(axis=1),
+            "over35": grid[:, total >= 4].sum(axis=1),
             "btts": grid[:, 1:, 1:].sum(axis=(1, 2)),
         }
 

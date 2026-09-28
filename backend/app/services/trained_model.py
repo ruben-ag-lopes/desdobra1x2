@@ -361,12 +361,18 @@ class Forecast:
     expected_goals: tuple[float, float]
     # market -> (probability, True if it comes from the model, False if it is the league's historical frequency)
     goal_markets: dict[str, tuple[float, bool]]
+    # Extra goal lines straight from the score grid, not backtested against the league average
+    # (informational only, like expected_goals and top_scores): over15, over35.
+    other_goal_lines: dict[str, float]
     top_scores: list[tuple[int, int, float]]  # most likely exact scores: (home goals, away goals, probability)
 
 
-def forecast_league(code: str, pairs: list[tuple[str, str]]) -> list[Forecast | None]:
+def forecast_league(
+    code: str, pairs: list[tuple[str, str]], multipliers: dict[str, float] | None = None
+) -> list[Forecast | None]:
     """1X2 and goal forecasts for fixtures of a known league (names as in football-data.co.uk).
 
+    `multipliers` ({criterion id: 0..2}) scale the criteria, same as in predict_many.
     None for a fixture whose teams have too few games in that league. Raises if the league data is unavailable.
     """
     spec = BY_CODE[code]
@@ -381,7 +387,7 @@ def forecast_league(code: str, pairs: list[tuple[str, str]]) -> list[Forecast | 
         return out
 
     domain = _domain(spec)
-    rows = _fixture_rows(domain, list(known.values()), None)
+    rows = _fixture_rows(domain, list(known.values()), multipliers)
     probs = domain.model.predict(rows)
     grids = _goals_model(domain).score_grid(rows)
     model_markets = _goals_model(domain).goal_markets(rows)
@@ -398,6 +404,9 @@ def forecast_league(code: str, pairs: list[tuple[str, str]]) -> list[Forecast | 
                 if market in spec.goal_markets
                 else (domain.goal_freq[market], False)
                 for market in ("over25", "btts")
+            },
+            other_goal_lines={
+                market: float(model_markets[market][j]) for market in ("over15", "over35")
             },
             top_scores=[(int(h), int(a), float(grid[h, a])) for h, a in zip(*np.unravel_index(top, grid.shape))],
         )

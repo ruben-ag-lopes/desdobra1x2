@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Draw(BaseModel):
@@ -81,6 +81,12 @@ MAX_MATCHES = 20
 CriterionId = Literal["elo", "casa", "ataque", "defesa", "h2h"]
 Multiplier = Annotated[float, Field(ge=0, le=2)]
 
+# Fallback ("criterios-v0") criteria: a pie of shares (same ids as
+# app.services.totobola_engine.LEGACY_WEIGHTS_DEFAULT). Each is at most 100% and, unlike the
+# multiplicadores above, they must not together add up to more than 100%.
+LegacyCriterionId = Literal["forma", "ranking_uefa", "ultimos2", "confronto_direto", "classificacao"]
+Share = Annotated[float, Field(ge=0, le=1)]
+
 
 class DesdobramentoRequest(BaseModel):
     matches: list[MatchInput] = Field(max_length=MAX_MATCHES)
@@ -89,6 +95,16 @@ class DesdobramentoRequest(BaseModel):
     data_sorteio: date | None = None
     # User-scaled criteria of the trained models: 1 = default, 0 = ignore it, 2 = double it. Empty = defaults.
     multiplicadores: dict[CriterionId, Multiplier] = {}
+    # Fallback-model criteria (used only for matches with no trained model): direct shares, empty = defaults.
+    pesos_antigos: dict[LegacyCriterionId, Share] = {}
+    bonus_casa: Share | None = None  # home-side bonus of the fallback model; None = default (10%)
+
+    @model_validator(mode="after")
+    def _pesos_antigos_nao_ultrapassam_100(self) -> "DesdobramentoRequest":
+        total = sum(self.pesos_antigos.values())
+        if total > 1.0 + 1e-9:
+            raise ValueError(f"pesos_antigos somam {total:.0%}, mais do que 100%")
+        return self
 
 
 class DesdobramentoResponse(BaseModel):
@@ -111,7 +127,9 @@ class LotteryGenerateResponse(BaseModel):
 
 class Criterion(BaseModel):
     nome: str
-    id: CriterionId | None = None  # set when the user can scale this criterion (multiplicadores)
+    # Set when the user can scale this criterion: a `multiplicadores` id (trained models) or a
+    # `pesos_antigos` id (fallback model) — see CriterionId and LegacyCriterionId above.
+    id: str | None = None
     peso: float | None = None  # share of influence in [0, 1]; None when not quantifiable
     detalhe: str = ""
 
@@ -150,7 +168,9 @@ class FootballGame(BaseModel):
     prob: list[float] | None = None  # 1, X, 2; None when the teams have too few games in the league
     modelo: str | None = None
     golos_esperados: list[float] | None = None  # home, away
+    mais_1_5: float | None = None  # informational only, not backtested (see other_goal_lines)
     mais_2_5: GoalMarket | None = None
+    mais_3_5: float | None = None  # informational only, not backtested
     ambas_marcam: GoalMarket | None = None
     resultados_provaveis: list[ExactScore] = []
     casas_de_apostas: list[float] | None = None  # 1, X, 2 implied by the average odds, margin removed

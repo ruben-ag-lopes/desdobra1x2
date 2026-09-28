@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { getCompeticoes, getJogos } from "../api/client";
-import type { Competition, FootballGame, GoalMarket, Outcome } from "../api/types";
+import type { Competition, Criteria, FootballGame, GoalMarket, Outcome } from "../api/types";
 import { CopyButton } from "../components/CopyButton";
 import { CriteriaDialog } from "../components/CriteriaDialog";
+import { isCriteriaCustom, loadCriteria, saveCriteria } from "../criteriaProfile";
 import { confidence, OUTCOMES, pickLabel, pickProbability, togglePick } from "../picks";
 
 const PERIODS = [
@@ -102,8 +103,18 @@ function GameCard({
                   <strong>{game.golos_esperados[1].toFixed(1)}</strong>
                 </li>
               )}
+              {game.mais_1_5 != null && (
+                <li className="hint">
+                  Mais de 1,5 golos: <strong>{pct(game.mais_1_5)}</strong> (informativo, não validado no backtest)
+                </li>
+              )}
               {game.mais_2_5 && (
                 <GoalLine label="Mais de 2,5 golos" market={game.mais_2_5} bookmakers={game.casas_mais_2_5} />
+              )}
+              {game.mais_3_5 != null && (
+                <li className="hint">
+                  Mais de 3,5 golos: <strong>{pct(game.mais_3_5)}</strong> (informativo, não validado no backtest)
+                </li>
               )}
               {game.ambas_marcam && <GoalLine label="Ambas marcam" market={game.ambas_marcam} />}
               {game.resultados_provaveis.length > 0 && (
@@ -132,6 +143,7 @@ export function FutebolTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [picks, setPicks] = useState<Map<string, { game: FootballGame; outcomes: Outcome[] }>>(new Map());
+  const [criteria, setCriteria] = useState<Criteria>(loadCriteria);
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -153,15 +165,19 @@ export function FutebolTab() {
     const id = ++requestId.current;
     setLoading(true);
     setError(null);
-    getJogos({
-      competicao: competicao || undefined,
-      q: debouncedQuery || undefined,
-      dias: dias || undefined,
-    })
+    getJogos(
+      { competicao: competicao || undefined, q: debouncedQuery || undefined, dias: dias || undefined },
+      criteria.multiplicadores,
+    )
       .then((list) => id === requestId.current && setGames(list))
       .catch((e) => id === requestId.current && setError(String(e)))
       .finally(() => id === requestId.current && setLoading(false));
-  }, [competicao, debouncedQuery, dias]);
+  }, [competicao, debouncedQuery, dias, criteria]);
+
+  function applyCriteria(next: Criteria) {
+    setCriteria(next);
+    saveCriteria(next);
+  }
 
   function pick(game: FootballGame, outcome: Outcome) {
     setPicks((prev) => {
@@ -225,8 +241,13 @@ export function FutebolTab() {
 
       {games && games.length > 0 && (
         <div className="result-heading">
-          <span className="hint">{games.length} jogo(s)</span>
-          {usage.size > 0 && <CriteriaDialog usage={usage} hasDouble={false} />}
+          <span className="hint">
+            {games.length} jogo(s)
+            {isCriteriaCustom(criteria) && <span className="custom-tag">critérios personalizados</span>}
+          </span>
+          {usage.size > 0 && (
+            <CriteriaDialog usage={usage} hasDouble={false} criteria={criteria} onApply={applyCriteria} />
+          )}
         </div>
       )}
 

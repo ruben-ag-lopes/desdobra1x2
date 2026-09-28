@@ -3,8 +3,8 @@ import { getContestMatches, getTotobolaDraws, postDesdobramento } from "../api/c
 import { CopyButton } from "../components/CopyButton";
 import { CriteriaDialog } from "../components/CriteriaDialog";
 import { DrawInfo } from "../components/DrawInfo";
-import type { DesdobramentoResponse, Draw, MatchInput, Multipliers, Outcome, ResultProbabilities } from "../api/types";
-import { isCustom, loadMultipliers, saveMultipliers } from "../criteriaProfile";
+import type { Criteria, DesdobramentoResponse, Draw, MatchInput, Outcome, ResultProbabilities } from "../api/types";
+import { isCriteriaCustom, loadCriteria, saveCriteria } from "../criteriaProfile";
 import { OUTCOMES, pickLabel, togglePick } from "../picks";
 
 interface Props {
@@ -66,7 +66,7 @@ export function TotobolaTab({ game, title }: Props) {
   const [result, setResult] = useState<DesdobramentoResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [multipliers, setMultipliers] = useState<Multipliers>(loadMultipliers);
+  const [criteria, setCriteria] = useState<Criteria>(loadCriteria);
 
   useEffect(() => {
     getTotobolaDraws()
@@ -123,9 +123,9 @@ export function TotobolaTab({ game, title }: Props) {
     );
   }
 
-  function applyCriteria(next: Multipliers) {
-    setMultipliers(next);
-    saveMultipliers(next);
+  function applyCriteria(next: Criteria) {
+    setCriteria(next);
+    saveCriteria(next);
     handleCalcular(next);
   }
 
@@ -133,11 +133,11 @@ export function TotobolaTab({ game, title }: Props) {
   const nDouble = matches.filter((m) => m.fixed_results.length === 2).length;
   const nFree = matches.length - nFixed - nDouble;
 
-  async function handleCalcular(criteria: Multipliers = multipliers) {
+  async function handleCalcular(criteriaOverride: Criteria = criteria) {
     setLoading(true);
     setError(null);
     try {
-      const res = await postDesdobramento(matches, nApostas, activeDraw, criteria);
+      const res = await postDesdobramento(matches, nApostas, activeDraw, criteriaOverride);
       setResult(res);
     } catch (e) {
       setError(String(e));
@@ -232,12 +232,12 @@ export function TotobolaTab({ game, title }: Props) {
           <div className="result-heading">
             <h3>
               Probabilidades calculadas
-              {isCustom(multipliers) && <span className="custom-tag">critérios personalizados</span>}
+              {isCriteriaCustom(criteria) && <span className="custom-tag">critérios personalizados</span>}
             </h3>
             <CriteriaDialog
               usage={modelUsage(result.probabilities)}
               hasDouble={result.probabilities.some((p) => p.fixed_results.length === 2)}
-              multipliers={multipliers}
+              criteria={criteria}
               onApply={applyCriteria}
             />
           </div>

@@ -57,7 +57,12 @@ def competitions() -> list[Competition]:
     ]
 
 
-def games(competicao: str | None = None, q: str | None = None, dias: int | None = None) -> list[FootballGame]:
+def games(
+    competicao: str | None = None,
+    q: str | None = None,
+    dias: int | None = None,
+    multiplicadores: dict[str, float] | None = None,
+) -> list[FootballGame]:
     selected = _fixtures()
     if competicao:
         selected = [f for f in selected if f.league == competicao]
@@ -72,7 +77,9 @@ def games(competicao: str | None = None, q: str | None = None, dias: int | None 
     for league in dict.fromkeys(f.league for f in selected):
         idx = [i for i, f in enumerate(selected) if f.league == league]
         try:
-            results = trained_model.forecast_league(league, [(selected[i].home, selected[i].away) for i in idx])
+            results = trained_model.forecast_league(
+                league, [(selected[i].home, selected[i].away) for i in idx], multiplicadores
+            )
         except Exception:
             results = [None] * len(idx)  # league data unavailable: list the games without a forecast
         forecasts.update(zip(idx, results))
@@ -96,7 +103,9 @@ def games(competicao: str | None = None, q: str | None = None, dias: int | None 
             game.prob = list(fc.probs)
             game.modelo = fc.version
             game.golos_esperados = list(fc.expected_goals)
+            game.mais_1_5 = fc.other_goal_lines["over15"]
             game.mais_2_5 = GoalMarket(probabilidade=over, fonte="modelo" if over_from_model else "media_liga")
+            game.mais_3_5 = fc.other_goal_lines["over35"]
             game.ambas_marcam = GoalMarket(probabilidade=btts, fonte="modelo" if btts_from_model else "media_liga")
             game.resultados_provaveis = [ExactScore(casa=h, fora=a, probabilidade=p) for h, a, p in fc.top_scores]
         out.append(game)

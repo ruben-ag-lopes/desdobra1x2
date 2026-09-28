@@ -8,14 +8,20 @@ from app.services.elo_formula import ELO_HOME_ADVANTAGE, elo_1x2
 
 Outcome = Literal["1", "X", "2"]
 
-# Criteria weights (sum to 1.0). "last2_in_competition" is redistributed
-# proportionally across the other criteria when fewer than 2 games are available.
-WEIGHT_RECENT_FORM = 0.40
-WEIGHT_UEFA_RANKING = 0.30
-WEIGHT_LAST2_COMPETITION = 0.15
-WEIGHT_H2H = 0.10
-WEIGHT_DOMESTIC_STANDING = 0.05
-HOME_ADVANTAGE_BONUS = 0.10
+# Fallback ("criterios-v0") criteria weights, used only when there's no trained model for a
+# match. They form a pie (share of total influence): each is 0-1 and together sum to 1.0.
+# "ultimos2" is redistributed proportionally across the others when fewer than 2 games are
+# available. See docs/criterios-antigos.md for the reasoning behind these defaults.
+LEGACY_WEIGHTS_DEFAULT: dict[str, float] = {
+    "forma": 0.40,
+    "ranking_uefa": 0.30,
+    "ultimos2": 0.15,
+    "confronto_direto": 0.10,
+    "classificacao": 0.05,
+}
+# Home-side bonus, additive (not part of the pie above): skipped for clubs playing at a
+# borrowed/rented venue (app/scrapers/loaned_venues.py).
+HOME_ADVANTAGE_BONUS_DEFAULT = 0.10
 
 
 def _form_score(results: list[Literal["W", "D", "L"]]) -> float:
@@ -129,24 +135,39 @@ def _trained_probabilities(match: MatchInput, result) -> ResultProbabilities | N
 
 
 def calcular_probabilidades_lote(
-    matches: list[MatchInput], multipliers: dict[str, float] | None = None
+    matches: list[MatchInput],
+    multipliers: dict[str, float] | None = None,
+    legacy_weights: dict[str, float] | None = None,
+    home_bonus: float | None = None,
 ) -> list[ResultProbabilities]:
     """Best available model per match: trained on history, then live Elo, then the manual criteria.
 
-    `multipliers` only scale the trained models; the fallbacks keep their fixed criteria.
+    `multipliers` only scale the trained models; `legacy_weights`/`home_bonus` only apply to the
+    "criterios-v0" fallback (used for matches with no trained model and no live Elo).
     """
     trained = trained_model.predict_many(
         [(m.home_team, m.away_team) for m in matches], multipliers, [m.competition for m in matches]
     )
-    return [_trained_probabilities(m, t) or calcular_probabilidades(m) for m, t in zip(matches, trained)]
+    return [
+        _trained_probabilities(m, t) or calcular_probabilidades(m, legacy_weights, home_bonus)
+        for m, t in zip(matches, trained)
+    ]
 
 
-def calcular_probabilidades(match: MatchInput) -> ResultProbabilities:
-    """Fallback chain without the trained model (live Elo, then the manual criteria)."""
+def calcular_probabilidades(
+    match: MatchInput, legacy_weights: dict[str, float] | None = None, home_bonus: float | None = None
+) -> ResultProbabilities:
+    """Fallback chain without the trained model (live Elo, then the manual criteria).
+
+    `legacy_weights`/`home_bonus` only affect the manual-criteria step (see LEGACY_WEIGHTS_DEFAULT).
+    """
 
     elo_result = _elo_probabilities(match)
     if elo_result is not None:
         return elo_result
+
+    weights = {**LEGACY_WEIGHTS_DEFAULT, **(legacy_weights or {})}
+    home_bonus = HOME_ADVANTAGE_BONUS_DEFAULT if home_bonus is None else home_bonus
 
     home_form, home_last2, home_standing, home_breakdown = _fetch_or_manual_team_strength(match, is_home=True)
     away_form, away_last2, away_standing, away_breakdown = _fetch_or_manual_team_strength(match, is_home=False)
@@ -156,18 +177,18 @@ def calcular_probabilidades(match: MatchInput) -> ResultProbabilities:
 
     h2h_score = _h2h_score(match.manual_h2h)
 
-    weight_last2 = WEIGHT_LAST2_COMPETITION
-    other_weight_total = WEIGHT_RECENT_FORM + WEIGHT_UEFA_RANKING + WEIGHT_H2H + WEIGHT_DOMESTIC_STANDING
+    weight_last2 = weights["ultimos2"]
+    other_weight_total = weights["forma"] + weights["ranking_uefa"] + weights["confronto_direto"] + weights["classificacao"]
     if home_last2 is None or away_last2 is None:
-        redistribution = weight_last2 / other_weight_total
+        redistribution = weight_last2 / other_weight_total if other_weight_total > 0 else 0.0
         weight_last2 = 0.0
     else:
         redistribution = 0.0
 
-    w_form = WEIGHT_RECENT_FORM * (1 + redistribution)
-    w_uefa = WEIGHT_UEFA_RANKING * (1 + redistribution)
-    w_h2h = WEIGHT_H2H * (1 + redistribution)
-    w_standing = WEIGHT_DOMESTIC_STANDING * (1 + redistribution)
+    w_form = weights["forma"] * (1 + redistribution)
+    w_uefa = weights["ranking_uefa"] * (1 + redistribution)
+    w_h2h = weights["confronto_direto"] * (1 + redistribution)
+    w_standing = weights["classificacao"] * (1 + redistribution)
 
     home_last2_val = home_last2 if home_last2 is not None else 0.5
     away_last2_val = away_last2 if away_last2 is not None else 0.5
@@ -191,7 +212,7 @@ def calcular_probabilidades(match: MatchInput) -> ResultProbabilities:
     if is_loaned is None:
         is_loaned = loaned_venues.plays_at_loaned_venue(match.home_team)
     if not is_loaned:
-        home_strength += HOME_ADVANTAGE_BONUS
+        home_strength += home_bonus
 
     # Draw likelihood: higher when the two strengths are close.
     diff = abs(home_strength - away_strength)
@@ -216,31 +237,25 @@ def calcular_probabilidades(match: MatchInput) -> ResultProbabilities:
 
 
 def _allocate_counts(probs: dict[Outcome, float], n: int) -> dict[Outcome, int]:
-    """Largest-remainder allocation of n bets across 1/X/2, with a floor rule:
-    no outcome below 50% probability may end up as the sole/majority pick.
+    """Largest-remainder allocation of n bets across 1/X/2, proportional to their probability.
+
+    When there is no favourite above 50%, also guarantees the runner-up at least one bet, so a
+    close game isn't reduced to a single result out of n_apostas just because of rounding.
     """
-    ordered: list[Outcome] = sorted(probs.keys(), key=lambda o: probs[o], reverse=True)
-    top = ordered[0]
-
-    if probs[top] < 0.5 and n >= 2:
-        # Spread more evenly: guarantee at least 2 outcomes get bets.
-        raw = {o: probs[o] * n for o in ordered}
-        counts = {o: max(1, int(raw[o])) for o in ordered[:2]}
-        counts[ordered[2]] = 0
-        remaining = n - sum(counts.values())
-        i = 0
-        while remaining > 0:
-            counts[ordered[i % 2]] += 1
-            remaining -= 1
-            i += 1
-        return counts
-
-    raw = {o: probs[o] * n for o in ordered}
-    counts = {o: int(raw[o]) for o in ordered}
+    outcomes = list(probs)
+    raw = {o: probs[o] * n for o in outcomes}
+    counts = {o: int(raw[o]) for o in outcomes}
     remainder = n - sum(counts.values())
-    fractional = sorted(ordered, key=lambda o: raw[o] - counts[o], reverse=True)
+    fractional = sorted(outcomes, key=lambda o: raw[o] - counts[o], reverse=True)
     for o in fractional[:remainder]:
         counts[o] += 1
+
+    ordered = sorted(outcomes, key=lambda o: probs[o], reverse=True)
+    runner_up = ordered[1]
+    if n >= 2 and probs[ordered[0]] < 0.5 and counts[runner_up] == 0:
+        donor = max(outcomes, key=lambda o: counts[o])
+        counts[donor] -= 1
+        counts[runner_up] += 1
     return counts
 
 
@@ -288,10 +303,19 @@ def _double_counts(probs: dict[Outcome, float], chosen: list[Outcome], n: int) -
 
 
 def gerar_desdobramento(
-    matches: list[MatchInput], n_apostas: int, multipliers: dict[str, float] | None = None
+    matches: list[MatchInput],
+    n_apostas: int,
+    multipliers: dict[str, float] | None = None,
+    legacy_weights: dict[str, float] | None = None,
+    home_bonus: float | None = None,
 ) -> tuple[list[ResultProbabilities], list[list[Outcome]]]:
     to_predict = [m for m in matches if len(m.fixed_results) != 1]
-    predicted = dict(zip((m.id for m in to_predict), calcular_probabilidades_lote(to_predict, multipliers)))
+    predicted = dict(
+        zip(
+            (m.id for m in to_predict),
+            calcular_probabilidades_lote(to_predict, multipliers, legacy_weights, home_bonus),
+        )
+    )
 
     probabilities: list[ResultProbabilities] = []
     for m in matches:
