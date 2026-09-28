@@ -229,3 +229,15 @@ class Competition(BaseModel):
     codigo: str
     nome: str
     jogos: int  # upcoming games listed
+
+
+class SuggestionRequest(BaseModel):
+    mensagem: str = Field(min_length=1, max_length=2000)
+    contacto: str | None = Field(default=None, max_length=200)  # optional email, for a reply
+
+    @field_validator("mensagem")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("mensagem must not be blank")
+        return value.strip()

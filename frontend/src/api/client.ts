@@ -73,6 +73,13 @@ export function postResumo(probabilities: ResultProbabilities[], n_apostas: numb
   });
 }
 
+export function postFeedback(mensagem: string, contacto?: string): Promise<{ status: string }> {
+  return request("/api/feedback", {
+    method: "POST",
+    body: JSON.stringify({ mensagem, contacto: contacto || undefined }),
+  });
+}
+
 export function getLotteryDraw(game: "totoloto" | "euromilhoes" | "eurodreams"): Promise<Draw | null> {
   return request(`/api/lotteries/${game}/draw`);
 }
