@@ -1,32 +1,31 @@
 """Last draw (winning key + prize table) and per-number frequency, scraped from the Santa Casa
-results/statistics pages (plain server-rendered HTML, no JavaScript needed — see
+results pages (plain server-rendered HTML, no JavaScript needed — see
 docs/plano-numeros-frequentes.md for the page URLs and structure this relies on).
 
-The frequency shown is "since the game started" (what the site itself shows), not a rolling
-365-day window: the statistics pages don't offer a date-range filter, only a per-number one. A
-365-day figure would need scraping the full draw history separately (see the plan).
+The frequency is computed by us, over the recent draws the "Consultar Sorteios" dropdown offers
+(~30, several months) — not "since the game started". We tried fetching a full year by walking
+contest ids backwards, but ids are shared across all Santa Casa games and are NOT evenly spaced
+per game (jumps beyond the dropdown's own range land on other games' draws or on gaps), so the
+result would be silently wrong. The dropdown's own list is what the site itself vouches for.
 """
 
 from datetime import date, datetime
 
 import httpx
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from app.cache import TTLCache
 from app.models import FrequenciaResponse, NumberFrequency, PrizeTier, UltimoSorteio
 
-_cache = TTLCache(ttl_seconds=12 * 3600)
+_cache = TTLCache(ttl_seconds=24 * 3600)
 
 _RESULT_URLS = {
     "totoloto": "https://www.jogossantacasa.pt/web/SCCartazResult/totolotoNew",
     "euromilhoes": "https://www.jogossantacasa.pt/web/SCCartazResult/",
     "eurodreams": "https://www.jogossantacasa.pt/web/ResultsBoard/EuroDreams",
 }
-_STATS_URLS = {
-    "totoloto": "https://www.jogossantacasa.pt/web/SCEstatisticas/totolotoN",
-    "euromilhoes": "https://www.jogossantacasa.pt/web/SCEstatisticas/",
-    "eurodreams": "https://www.jogossantacasa.pt/web/Statistics/EuroDreams",
-}
+# Highest possible main number, so numbers absent from the sample still show up (0 saídas).
+_MAX_NUMBER = {"totoloto": 49, "euromilhoes": 50, "eurodreams": 40}
 
 
 def _soup(url: str) -> BeautifulSoup:
@@ -39,24 +38,41 @@ def _int(text: str) -> int:
     return int(text.replace(".", "").strip() or 0)
 
 
-def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
-    soup = _soup(_RESULT_URLS[game])
-
+def _draw_info(soup: BeautifulSoup) -> tuple[str, date]:
     info = soup.select_one("span.dataInfo")
     if info is None:
-        raise ValueError(f"Could not find the draw info block for {game}")
+        raise ValueError("Could not find the draw info block")
     lines = [line.strip() for line in info.get_text("\n").splitlines() if line.strip()]
     concurso = lines[0].split(":", 1)[1].strip()
     data_sorteio = datetime.strptime(lines[1].rsplit("-", 1)[1].strip(), "%d/%m/%Y").date()
+    return concurso, data_sorteio
 
+
+def _winning_key(soup: BeautifulSoup) -> tuple[list[int], list[int], list[int]]:
+    """(chave, chave_extra, ordem_saida) — ordem_saida includes any extra numbers too."""
     key_rows = soup.select("div.betMiddle.twocol.regPad ul[class*='colum'] > li")
     if len(key_rows) < 2:
-        raise ValueError(f"Could not find the winning key for {game}")
+        raise ValueError("Could not find the winning key")
     main_text, _, extra_text = key_rows[0].get_text(strip=True).partition("+")
     chave = [int(n) for n in main_text.split()]
     chave_extra = [int(n) for n in extra_text.split()] if extra_text else []
     ordem_text, _, ordem_extra_text = key_rows[1].get_text(strip=True).partition("+")
     ordem_saida = [int(n) for n in ordem_text.split()] + ([int(n) for n in ordem_extra_text.split()] if ordem_extra_text else [])
+    return chave, chave_extra, ordem_saida
+
+
+def _recent_contests(soup: BeautifulSoup) -> list[str]:
+    """Contest ids the page's own "Consultar Sorteios" dropdown offers, newest first."""
+    select = soup.select_one("select[name=selectContest]")
+    if select is None:
+        return []
+    return [opt["value"] for opt in select.select("option") if opt.get("value")]
+
+
+def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
+    soup = _soup(_RESULT_URLS[game])
+    concurso, data_sorteio = _draw_info(soup)
+    chave, chave_extra, ordem_saida = _winning_key(soup)
 
     premios = []
     for row in soup.select("div.stripped.betMiddle ul[class*='colum']"):
@@ -86,44 +102,41 @@ def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
     )
 
 
-def _row_cells(row: Tag) -> list[str]:
-    return [li.get_text(strip=True) for li in row.select("li")]
-
-
 def _fetch_frequencia(game: str) -> FrequenciaResponse:
-    soup = _soup(_STATS_URLS[game])
+    """Number frequency over the recent draws the site's own dropdown lists (see module docstring)."""
+    front_page = _soup(_RESULT_URLS[game])
+    contest_ids = _recent_contests(front_page)
+    if not contest_ids:
+        raise ValueError(f"Could not find the list of recent draws for {game}")
 
-    info = soup.select_one("span.dataInfo")
-    if info is None:
-        raise ValueError(f"Could not find the statistics info block for {game}")
-    lines = [line.strip() for line in info.get_text("\n").splitlines() if line.strip()]
-    desde_line = next((line for line in lines if "desde" in line.lower()), "")
-    desde = datetime.strptime(desde_line.rsplit(":", 1)[-1].strip(), "%d/%m/%Y").date()
+    draws: list[tuple[str, date, list[int]]] = []
+    for i, contest_id in enumerate(contest_ids):
+        soup = front_page if i == 0 else _soup(f"{_RESULT_URLS[game]}?selectContest={contest_id}")
+        concurso, data_sorteio = _draw_info(soup)
+        chave, _, _ = _winning_key(soup)
+        draws.append((concurso, data_sorteio, chave))
 
-    # Some games (Totoloto's "Número da Sorte", EuroDreams's "Nº de Sonho") have a second, smaller
-    # number pool with its own sixcol table; the main numbers are always the first one on the page.
-    # The row class is spelled "colums" on some pages and "columns" on others.
-    tables = soup.select("div.stripped.betMiddle.sixcol")
-    if not tables:
-        raise ValueError(f"Could not find the frequency table for {game}")
-    numeros = []
-    for row in tables[0].select("ul[class*='colum']"):
-        cells = _row_cells(row)
-        if len(cells) != 6:
-            continue
-        numero, saidas, pct, ultimo, data_txt, ausencias = cells
-        numeros.append(
-            NumberFrequency(
-                numero=int(numero),
-                saidas=_int(saidas),
-                percentagem=float(pct.replace(",", ".")),
-                ultimo_sorteio=ultimo,
-                data_ultimo_sorteio=datetime.strptime(data_txt, "%d/%m/%Y").date(),
-                ausencias=_int(ausencias),
-            )
+    last_seen: dict[int, tuple[str, date]] = {}
+    counts: dict[int, int] = dict.fromkeys(range(1, _MAX_NUMBER[game] + 1), 0)
+    for concurso, data_sorteio, chave in draws:  # newest first: the first hit per number is its latest
+        for n in chave:
+            counts[n] += 1
+            last_seen.setdefault(n, (concurso, data_sorteio))
+
+    total = len(draws)
+    numeros = [
+        NumberFrequency(
+            numero=n,
+            saidas=saidas,
+            percentagem=round(100 * saidas / total, 2) if total else 0.0,
+            ultimo_sorteio=last_seen.get(n, (None, None))[0],
+            data_ultimo_sorteio=last_seen.get(n, (None, None))[1],
+            ausencias=next((i for i, (_, _, chave) in enumerate(draws) if n in chave), total),
         )
+        for n, saidas in counts.items()
+    ]
 
-    return FrequenciaResponse(game=game, desde=desde, numeros=numeros)
+    return FrequenciaResponse(game=game, desde=draws[-1][1], n_sorteios=total, numeros=numeros)
 
 
 def get_ultimo_sorteio(game: str) -> UltimoSorteio:

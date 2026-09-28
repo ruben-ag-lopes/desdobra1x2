@@ -122,7 +122,7 @@ class MultipliersTest(unittest.TestCase):
 
     def test_api_accepts_only_known_criteria_in_range(self):
         self.assertEqual(set(get_args(CriterionId)), set(CRITERIA))
-        DesdobramentoRequest(matches=[], n_apostas=1, multiplicadores={"elo": 2, "casa": 0})
-        for bad in ({"elo": 2.1}, {"elo": -0.1}, {"forma": 1}):
+        DesdobramentoRequest(matches=[], n_apostas=1, multiplicadores={"elo": 1, "casa": 0})
+        for bad in ({"elo": 1.1}, {"elo": -0.1}, {"forma": 1}):
             with self.assertRaises(ValueError):
                 DesdobramentoRequest(matches=[], n_apostas=1, multiplicadores=bad)

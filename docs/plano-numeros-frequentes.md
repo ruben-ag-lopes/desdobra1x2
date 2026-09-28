@@ -4,10 +4,14 @@
 > Euromilhões e EuroDreams — `app/scrapers/santacasa_results.py`, `GET /api/lotteries/{game}/ultimo-sorteio` e
 > `/frequencia`, cartões no `LotteryTab.tsx`. Testado com dados reais do site.
 >
-> **Por fazer:** a frequência é **desde sempre** (desde 2011/2004/2023, conforme o jogo), não os últimos 365
-> dias — o site não tem esse filtro (só filtra por número individual). Fazer os últimos 365 dias exigiria
-> percorrer os sorteios de um ano via o "Motor de Pesquisa" e somar nós próprios; não foi feito por já ser um
-> volume de pedidos maior. Totobola/Totobola Extra (só "último sorteio", sem frequência) também ficaram de fora.
+> **Frequência: calculada por nós, sobre os sorteios recentes que o site lista** (a dropdown "Consultar
+> Sorteios" da própria página, ~30 sorteios: uns 7 meses para Euromilhões/EuroDreams, ~3,5 meses para o Totoloto,
+> que sorteia 2x por semana). Tentámos recuar mais (ids de concurso mais antigos, fora da dropdown) mas os ids
+> são partilhados por todos os jogos da Santa Casa e não avançam de forma constante por jogo — saltar para trás
+> além da dropdown dá resultados que já não pertencem a este jogo, silenciosamente errados. Ficou por isso pela
+> janela que o site garante ser fiável, em vez de "desde sempre" (2011/2004/2023) ou de "últimos 365 dias"
+> exatos. Só se aplica às lotarias (Totoloto, Euromilhões, EuroDreams); Totobola/Totobola Extra e os outros
+> desportos não têm esta funcionalidade, por indicação do utilizador.
 
 ## Aviso a manter sempre visível
 Mostrar a frequência de números **não aumenta a probabilidade de ganhar**: cada sorteio é independente dos
@@ -47,16 +51,11 @@ Receita ilíquida apostas, Montante para prémios, Nº de registos/apostas
 ```
 Cada jogo tem um número de escalões de prémio diferente — o modelo de dados tem de ser uma lista, não campos fixos.
 
-### Números mais frequentes (exemplo real, Totoloto)
-A página de Estatísticas tem uma tabela por número: `Nº saídas`, `% de saídas`, `Último sorteio`, `Data`,
-`Ausências` (sorteios desde a última saída). No Totoloto os dados começam em **13/03/2011**; no EuroDreams em
-**30/10/2023**. É **desde sempre**, não "últimos 365 dias".
-
-**Por confirmar antes de implementar:** a página tem um filtro "Consultar Números" com uma opção "Todos" — pode
-ser um seletor de período (dia/mês/ano) que ainda não explorámos. Se existir um filtro por data, é a forma mais
-simples de obter os últimos 365 dias. **Se não existir**, a alternativa é calcular nós próprios a frequência,
-percorrendo os sorteios de um ano (via "Motor de Pesquisa", que lista sorteios por data) e somando os números —
-mais scraping, mas sempre correto independentemente do que o site oferecer.
+### Números mais frequentes
+A página de Estatísticas do site (`SCEstatisticas`/`Statistics`) mostra a frequência **desde sempre** (2011 no
+Totoloto, 2023 no EuroDreams) e só filtra por número individual, não por período — por isso não a usamos.
+Implementámos antes o cálculo nós próprios, a partir dos ~30 sorteios recentes que a própria página de
+resultados lista em "Consultar Sorteios" (ver a nota no topo do documento).
 
 ## Modelo de dados (proposta)
 ```python
@@ -79,16 +78,22 @@ class NumberFrequency(BaseModel):
     numero: int
     saidas: int
     percentagem: float
-    ultimo_sorteio: str
-    data_ultimo_sorteio: date
-    ausencias: int  # sorteios desde a última vez que saiu
+    ultimo_sorteio: str | None  # None se não saiu na janela contada
+    data_ultimo_sorteio: date | None
+    ausencias: int  # sorteios, dentro da janela contada, desde a última vez que saiu
+
+class FrequenciaResponse(BaseModel):
+    game: str
+    desde: date  # data do sorteio mais antigo contado
+    n_sorteios: int
+    numeros: list[NumberFrequency]
 ```
 
-## API (proposta)
+## API (implementado)
 | Endpoint | Descrição |
 |---|---|
 | `GET /api/lotteries/{game}/ultimo-sorteio` | Chave vencedora + tabela de prémios do último sorteio. |
-| `GET /api/lotteries/{game}/frequencia?dias=365` | Frequência por número. `dias` omitido = desde sempre (se o site não filtrar por data, `dias` só funciona para jogos onde calculemos nós próprios). |
+| `GET /api/lotteries/{game}/frequencia` | Frequência por número, sobre os ~30 sorteios recentes listados pelo site (`desde`/`n_sorteios` na resposta dizem qual é a janela real). |
 
 Cache: os dados só mudam depois de cada sorteio (uma ou duas vezes por semana, conforme o jogo) — TTL de 12h chega, igual aos scrapers atuais (`app/cache.py`, `TTLCache`).
 

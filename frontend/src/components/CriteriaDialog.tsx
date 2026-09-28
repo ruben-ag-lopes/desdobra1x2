@@ -97,8 +97,8 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
           <section className="criteria-editor">
             <h4>Os teus critérios</h4>
             <p className="hint">
-              Dá mais ou menos importância a cada critério: 100% é o modelo predefinido, 0% ignora o critério e 200%
-              duplica o seu efeito. Aplica-se aos jogos com modelo treinado.
+              Dá menos importância a um critério, entre 100% (modelo predefinido) e 0% (critério ignorado). Aplica-se
+              aos jogos com modelo treinado.
             </p>
             <datalist id="criteria-default-tick">
               <option value={100} />

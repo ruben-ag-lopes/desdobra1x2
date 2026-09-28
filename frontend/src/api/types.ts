@@ -155,13 +155,14 @@ export interface NumberFrequency {
   numero: number;
   saidas: number;
   percentagem: number;
-  ultimo_sorteio: string;
-  data_ultimo_sorteio: string;
+  ultimo_sorteio: string | null; // null: didn't come out in the counted window
+  data_ultimo_sorteio: string | null;
   ausencias: number;
 }
 
 export interface FrequenciaResponse {
   game: string;
   desde: string;
+  n_sorteios: number;
   numeros: NumberFrequency[];
 }

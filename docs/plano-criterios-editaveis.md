@@ -1,11 +1,11 @@
 # Plano 12 — Critérios editáveis: o que falta
 
-Já existe: no pop-up "Critérios e pesos", um cursor de 0% a 200% por critério, com "Aplicar e recalcular" e "Repor predefinidos". A escolha fica guardada no navegador (aplica-se ao Totobola **e** ao Futebol) e a tabela mostra "critérios personalizados". Como funciona: [criterios.md](criterios.md) e [criterios-antigos.md](criterios-antigos.md).
+Já existe: no pop-up "Critérios e pesos", um cursor de 0% a 100% por critério, com "Aplicar e recalcular" e "Repor predefinidos". A escolha fica guardada no navegador (aplica-se ao Totobola **e** ao Futebol) e a tabela mostra "critérios personalizados". Como funciona: [criterios.md](criterios.md) e [criterios-antigos.md](criterios-antigos.md).
 
 **Feito (27/09/2026):**
 - **Critérios antigos editáveis** (jogos sem histórico): os 5 pesos (`forma`, `ranking_uefa`, `ultimos2`, `confronto_direto`, `classificacao`) têm sliders próprios de 0% a 100%, numa secção separada do pop-up ("Critérios do modelo antigo"). Diferença importante face aos multiplicadores: estes são uma **partilha de 100%** (a soma não pode ultrapassar 100% e cada um também não, `app/models.py`, validado no backend e travado no slider do frontend).
 - **Correção do desdobramento:** um resultado com probabilidade só ligeiramente menor do que os outros dois deixou de ficar sempre a zero apostas — a repartição é agora sempre proporcional às probabilidades (`_allocate_counts`, com testes de regressão).
-- **Futebol usa o mesmo editor de critérios** do Totobola (multiplicadores 0–200%; os critérios antigos não se aplicam aqui porque o Futebol só lista jogos com modelo treinado).
+- **Futebol usa o mesmo editor de critérios** do Totobola (multiplicadores 0–100%; os critérios antigos não se aplicam aqui porque o Futebol só lista jogos com modelo treinado).
 - **Mais linhas de golos** no Futebol: "mais de 1,5" e "mais de 3,5" golos, mostradas como informação (não validadas no backtest, ao contrário de "mais de 2,5" e "ambas marcam").
 
 Hoje há um único conjunto de critérios (multiplicadores + pesos antigos), guardado uma vez e partilhado por toda a app.

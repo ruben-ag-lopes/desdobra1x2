@@ -67,10 +67,13 @@ function FrequenciaCard({ frequencia }: { frequencia: FrequenciaResponse }) {
 
   return (
     <details className="frequencia">
-      <summary>Números mais frequentes (desde {formatDate(frequencia.desde)})</summary>
+      <summary>
+        Números mais frequentes (últimos {frequencia.n_sorteios} sorteios, desde {formatDate(frequencia.desde)})
+      </summary>
       <p className="hint">
         A frequência passada <strong>não aumenta a probabilidade</strong> de um número sair no próximo sorteio: cada
-        sorteio é independente dos anteriores. Isto é só curiosidade.
+        sorteio é independente dos anteriores. Isto é só curiosidade, calculada apenas com os sorteios recentes
+        disponíveis no site — não é o histórico completo do jogo.
       </p>
       <div className="frequencia-grid">
         <div>

@@ -79,7 +79,8 @@ MAX_MATCHES = 20
 
 # Criteria the user can scale (same ids as app.research.importance.CRITERIA).
 CriterionId = Literal["elo", "casa", "ataque", "defesa", "h2h"]
-Multiplier = Annotated[float, Field(ge=0, le=2)]
+# 0 = ignore the criterion, 1 = default. Capped at 1 (no amplifying beyond the default model).
+Multiplier = Annotated[float, Field(ge=0, le=1)]
 
 # Fallback ("criterios-v0") criteria: a pie of shares (same ids as
 # app.services.totobola_engine.LEGACY_WEIGHTS_DEFAULT). Each is at most 100% and, unlike the
@@ -147,14 +148,15 @@ class NumberFrequency(BaseModel):
     numero: int
     saidas: int
     percentagem: float
-    ultimo_sorteio: str
-    data_ultimo_sorteio: date
-    ausencias: int  # draws since this number last came out
+    ultimo_sorteio: str | None = None  # None if the number didn't come out in the counted window
+    data_ultimo_sorteio: date | None = None
+    ausencias: int  # draws since this number last came out, within the counted window
 
 
 class FrequenciaResponse(BaseModel):
     game: str
-    desde: date  # data has been tracked since this date (not a rolling window — see the scraper's docstring)
+    desde: date  # date of the oldest draw counted (see the scraper's docstring: a recent window, not all-time)
+    n_sorteios: int  # how many draws were counted
     numeros: list[NumberFrequency]
 
 

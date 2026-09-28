@@ -1,7 +1,7 @@
 import type { Criteria, CriterionId, LegacyCriterionId, LegacyWeights, Multipliers } from "./api/types";
 
 const STORAGE_KEY = "desdobra1x2.criterios";
-export const MULTIPLIER_MAX = 2; // same limit as the backend (app/models.py)
+export const MULTIPLIER_MAX = 1; // same limit as the backend (app/models.py): no amplifying beyond the default
 export const LEGACY_SHARE_MAX = 1; // same limit as the backend (app/models.py, "Share")
 
 // Mirrors app/services/totobola_engine.py, LEGACY_WEIGHTS_DEFAULT — used only to tell "still at

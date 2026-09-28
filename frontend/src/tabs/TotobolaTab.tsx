@@ -61,7 +61,6 @@ export function TotobolaTab({ game, title }: Props) {
   const [drawsError, setDrawsError] = useState<string | null>(null);
   const [matches, setMatches] = useState<MatchInput[]>([]);
   const [matchesStatus, setMatchesStatus] = useState<string | null>(null);
-  const [bulkText, setBulkText] = useState("");
   const [nApostas, setNApostas] = useState(4);
   const [result, setResult] = useState<DesdobramentoResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -93,24 +92,11 @@ export function TotobolaTab({ game, title }: Props) {
         setResult(null);
         setMatchesStatus(fixtures.length ? null : "O concurso ainda não tem jogos publicados.");
       })
-      .catch((e) => setMatchesStatus(`Não foi possível obter os jogos automaticamente (${e}). Cola-os abaixo.`));
+      .catch((e) => setMatchesStatus(`Não foi possível obter os jogos automaticamente (${e}). Adiciona-os com "+ Adicionar jogo".`));
   }
 
   // Fetch the official fixtures whenever the active contest changes (i.e. on app load/refresh).
   useEffect(loadOfficialMatches, [contestId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function importBulk() {
-    const parsed = bulkText
-      .split(/\r?\n/)
-      .map((line) => line.split(/\s+(?:-|–|vs\.?|x)\s+|-/i).map((t) => t.trim()))
-      .filter((p) => p.length >= 2 && p[0] && p[1])
-      .map((p) => newMatch(p[0], p.slice(1).join("-")));
-    if (parsed.length) {
-      setMatches(parsed);
-      setBulkText("");
-      setResult(null);
-    }
-  }
 
   function updateMatch(id: string, patch: Partial<MatchInput>) {
     setMatches((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
@@ -181,18 +167,6 @@ export function TotobolaTab({ game, title }: Props) {
           Recarregar jogos do concurso
         </button>
       </div>
-      <details>
-        <summary>Colar jogos manualmente (um por linha: "Casa - Fora")</summary>
-        <textarea
-          rows={6}
-          style={{ width: "100%" }}
-          placeholder={"Benfica - Porto\nSporting - Braga"}
-          value={bulkText}
-          onChange={(e) => setBulkText(e.target.value)}
-        />
-        <button onClick={importBulk}>Importar</button>
-      </details>
-
       {matches.length > 0 && (
         <p className="hint">
           Um resultado escolhido fica fixo em todas as apostas. Dois resultados formam uma dupla: as apostas só usam

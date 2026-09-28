@@ -21,9 +21,9 @@ Num jogo Noruega - Portugal o modelo dá 33% / 28% / 38%. Se escolheres a **dupl
 Carrega em **"Critérios e pesos"**. O pop-up mostra, para cada modelo usado, os critérios (força das equipas, fator casa, ataque, defesa e confronto direto) e o peso de cada um, mais a origem dos dados.
 
 ### Personalizar os critérios
-No mesmo pop-up, cada critério tem um cursor de 0% a 200%:
+No mesmo pop-up, cada critério tem um cursor de 0% a 100%:
 - **100%** é o modelo predefinido.
-- **0%** ignora o critério e **200%** duplica o seu efeito.
+- **0%** ignora o critério.
 
 Carrega em **Aplicar e recalcular**. Enquanto tiveres alterações, a tabela mostra a etiqueta **"critérios personalizados"**. **"Repor predefinidos"** volta sempre ao modelo original. As tuas escolhas ficam guardadas neste navegador.
 

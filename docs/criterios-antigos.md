@@ -2,7 +2,7 @@
 
 > Este ficheiro documenta o modelo de recurso "pouco fiável" (`criterios-v0`), usado só quando não há
 > histórico das equipas (nem modelo treinado nem Elo publicado). É diferente do sistema de
-> multiplicadores 0–200% do pop-up "Critérios e pesos" (ver [criterios.md](criterios.md)): aqui os
+> multiplicadores 0–100% do pop-up "Critérios e pesos" (ver [criterios.md](criterios.md)): aqui os
 > 5 pesos são uma **partilha de 100%** — a soma nunca pode ultrapassar 100% e nenhum pode sozinho
 > ultrapassar 100% (validado em `app/models.py`, `DesdobramentoRequest`).
 

@@ -14,6 +14,10 @@ from app.scrapers import santacasa_results as sr
 
 _RESULT_HTML = """
 <span class="dataInfo">Sorteio: 077/2026 - sábado<br>Data do Sorteio - 26/09/2026</span>
+<select name="selectContest">
+  <option value="15096.0">077/2026 - sábado</option>
+  <option value="15084.0">065/2026 - sábado</option>
+</select>
 <div class="betMiddle twocol regPad">
   <ul class="colums">
     <li>12 13 17 38 45 + 11</li>
@@ -29,25 +33,22 @@ _RESULT_HTML = """
 </div>
 """
 
-_STATS_HTML = """
-<span class="dataInfo">Dados atualizados em: 27/09/2026 03:00<br>Informação disponível desde: 13/03/2011</span>
-<div class="stripped betMiddle sixcol">
-  <ul class="colums"><li>1</li><li>137</li><li>8,45</li><li>076/2026</li><li>23/09/2026</li><li>1</li></ul>
-  <ul class="colums"><li>2</li><li>162</li><li>9,99</li><li>075/2026</li><li>19/09/2026</li><li>2</li></ul>
-</div>
-<div class="stripped betMiddle sixcol">
-  <ul class="columns"><li>1</li><li>500</li><li>25,0</li><li>077/2026</li><li>26/09/2026</li><li>0</li></ul>
-</div>
-"""
 
-
-def _patched(html: str):
-    return patch.object(sr, "_soup", return_value=BeautifulSoup(html, "html.parser"))
+def _fixture(concurso: str, data: str, chave: str) -> str:
+    return f"""
+    <span class="dataInfo">Sorteio: {concurso}<br>Data do Sorteio - {data}</span>
+    <div class="betMiddle twocol regPad">
+      <ul class="columns"><li>{chave}</li><li>{chave}</li></ul>
+    </div>
+    """
 
 
 class UltimoSorteioTest(unittest.TestCase):
+    def _patched(self):
+        return patch.object(sr, "_soup", return_value=BeautifulSoup(_RESULT_HTML, "html.parser"))
+
     def test_parses_key_and_prizes(self):
-        with _patched(_RESULT_HTML):
+        with self._patched():
             result = sr._fetch_ultimo_sorteio("totoloto")
         self.assertEqual(result.concurso, "077/2026 - sábado")
         self.assertEqual(str(result.data_sorteio), "2026-09-26")
@@ -56,14 +57,14 @@ class UltimoSorteioTest(unittest.TestCase):
         self.assertEqual(result.ordem_saida, [38, 45, 12, 13, 17, 11])
 
     def test_prize_tiers_from_both_tables(self):
-        with _patched(_RESULT_HTML):
+        with self._patched():
             result = sr._fetch_ultimo_sorteio("totoloto")
         self.assertEqual(len(result.premios), 3)
         self.assertEqual(result.premios[1].vencedores_total, 143)
         self.assertEqual(result.premios[1].valor, "€ 347,68")
 
     def test_two_column_prize_row_splits_portugal_and_total(self):
-        with _patched(_RESULT_HTML):
+        with self._patched():
             result = sr._fetch_ultimo_sorteio("euromilhoes")
         jackpot = result.premios[-1]
         self.assertEqual(jackpot.vencedores_portugal, 0)
@@ -71,23 +72,43 @@ class UltimoSorteioTest(unittest.TestCase):
 
 
 class FrequenciaTest(unittest.TestCase):
-    def test_only_the_first_table_is_used(self):
-        # Regression: the bonus-number table (e.g. "Número da Sorte") must not be mixed in.
-        with _patched(_STATS_HTML):
-            result = sr._fetch_frequencia("totoloto")
-        self.assertEqual(str(result.desde), "2011-03-13")
-        self.assertEqual([n.numero for n in result.numeros], [1, 2])
-        self.assertEqual(result.numeros[0].saidas, 137)
-        self.assertEqual(result.numeros[0].percentagem, 8.45)
-        self.assertEqual(result.numeros[0].ausencias, 1)
+    """_fetch_frequencia fetches the front page once, then one page per listed contest id."""
 
-    def test_columns_class_spelling_is_also_recognised(self):
-        # EuroDreams' template spells the class "columns", not "colums" like the others.
-        html = _STATS_HTML.replace('<div class="stripped betMiddle sixcol">\n  <ul class="colums">', "PLACEHOLDER")
-        only_columns_spelling = _STATS_HTML.split('<div class="stripped betMiddle sixcol">')[0] + (
-            '<div class="stripped betMiddle sixcol">\n  <ul class="columns"><li>9</li><li>9</li><li>9,0</li>'
-            "<li>077/2026</li><li>26/09/2026</li><li>0</li></ul>\n</div>"
+    def test_counts_numbers_across_the_recent_draws_only(self):
+        pages = {
+            "front": _fixture("003/2026", "15/01/2026", "1 2 3 4 5 + 9"),
+            "b.0": _fixture("002/2026", "12/01/2026", "1 2 3 4 6 + 9"),
+            "c.0": _fixture("001/2026", "08/01/2026", "1 2 3 4 7 + 9"),
+        }
+        front = BeautifulSoup(
+            pages["front"] + '<select name="selectContest">'
+            '<option value="a.0">003/2026</option><option value="b.0">002/2026</option>'
+            '<option value="c.0">001/2026</option></select>',
+            "html.parser",
         )
-        with _patched(only_columns_spelling):
-            result = sr._fetch_frequencia("eurodreams")
-        self.assertEqual([n.numero for n in result.numeros], [9])
+
+        def fake_soup(url: str) -> BeautifulSoup:
+            key = "b.0" if "b.0" in url else "c.0" if "c.0" in url else "front"
+            return BeautifulSoup(pages[key], "html.parser") if key != "front" else front
+
+        with patch.object(sr, "_soup", side_effect=fake_soup), patch.object(sr, "_MAX_NUMBER", {"totoloto": 9}):
+            result = sr._fetch_frequencia("totoloto")
+
+        self.assertEqual(result.n_sorteios, 3)
+        self.assertEqual(str(result.desde), "2026-01-08")  # oldest of the 3 draws
+        by_number = {n.numero: n for n in result.numeros}
+        self.assertEqual(by_number[1].saidas, 3)  # in every draw
+        self.assertEqual(by_number[1].ausencias, 0)  # came out in the newest draw
+        self.assertEqual(by_number[5].saidas, 1)  # only the newest draw
+        self.assertEqual(by_number[7].saidas, 1)  # only the oldest draw
+        self.assertEqual(by_number[7].ausencias, 2)  # 2 more recent draws without it
+        self.assertEqual(by_number[8].saidas, 0)  # never drawn
+        self.assertEqual(by_number[8].ausencias, 3)
+        self.assertIsNone(by_number[8].ultimo_sorteio)
+        self.assertAlmostEqual(by_number[1].percentagem, 100.0)
+        self.assertAlmostEqual(by_number[5].percentagem, 100 / 3, places=1)
+
+    def test_no_dropdown_raises(self):
+        with patch.object(sr, "_soup", return_value=BeautifulSoup("<p>empty</p>", "html.parser")):
+            with self.assertRaises(ValueError):
+                sr._fetch_frequencia("totoloto")

@@ -102,10 +102,9 @@ python -m app.research.backtest --international
 - Os mercados de golos têm ganho modesto sobre a média da liga.
 
 ## Critérios personalizados
-No pop-up "Critérios e pesos", cada critério tem um cursor de 0% a 200%:
+No pop-up "Critérios e pesos", cada critério tem um cursor de 0% a 100%:
 - **100%** é o modelo predefinido, sem alterações.
 - **0%** ignora o critério: as suas variáveis passam para o valor "sem informação".
-- **200%** duplica o efeito do critério.
 
 Formalmente, cada variável `x` do critério passa a `neutro + m × (x − neutro)`, onde `m` é o multiplicador e o valor neutro é a média dos jogos de treino (ou 0 para o Elo, o fator casa e o confronto direto). Os multiplicadores aplicam-se a todos os jogos com modelo treinado. A escolha fica guardada no teu navegador, e "Repor predefinidos" volta sempre ao modelo original.
 
