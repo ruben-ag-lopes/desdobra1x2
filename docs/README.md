@@ -22,6 +22,7 @@ O que já funciona em http://localhost:5173: Totobola e Totobola Extra (com fixo
 | 15 | Contas de utilizador e acesso pago | decisão de preço/modelo | 📝 [plano-utilizadores-pagamento.md](plano-utilizadores-pagamento.md) |
 | 16 | Resumo do desdobramento gerado por IA | chave Claude/OpenAI | 📝 [plano-resumo-ia.md](plano-resumo-ia.md) |
 | 17 | Mercados de basquetebol, andebol, ténis, voleibol | ⛔ **bloqueado:** o plano gratuito da API-Sports não dá histórico nestes desportos (só jogos de hoje±1) | 📝 [plano-outros-desportos.md](plano-outros-desportos.md) |
+| 18 | Guardas de segurança (rate limiting, erros sem detalhe interno, etc.) | — | 🔴 **implementar antes do go-live** — [plano-seguranca.md](plano-seguranca.md) |
 
 **As tuas ações** (contas, chaves, decisões), pela ordem sugerida: [guia-acoes.md](guia-acoes.md).
 
