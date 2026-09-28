@@ -1,9 +1,17 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
 
 from app.cache import cdn_cache
-from app.models import DesdobramentoRequest, DesdobramentoResponse, Draw, FixtureInfo, ModelCriteria
+from app.models import (
+    DesdobramentoRequest,
+    DesdobramentoResponse,
+    Draw,
+    FixtureInfo,
+    ModelCriteria,
+    ResumoRequest,
+    ResumoResponse,
+)
 from app.scrapers import santacasa_calendar
-from app.services import criteria, totobola_engine
+from app.services import criteria, resumo_ia, totobola_engine
 from app.storage import bigquery
 
 router = APIRouter(prefix="/api/totobola", tags=["totobola"])
@@ -41,6 +49,23 @@ def desdobramento(req: DesdobramentoRequest, background: BackgroundTasks):
     )
     background.add_task(bigquery.log_predictions, probabilities, req.concurso, req.data_sorteio)
     return DesdobramentoResponse(probabilities=probabilities, apostas=apostas)
+
+
+@router.get("/resumo-disponivel")
+def resumo_disponivel() -> dict:
+    return {"disponivel": resumo_ia.enabled()}
+
+
+@router.post("/resumo", response_model=ResumoResponse)
+def resumo(req: ResumoRequest):
+    """AI-written explanation of an already-computed desdobramento (docs/plano-resumo-ia.md)."""
+    if not resumo_ia.enabled():
+        return ResumoResponse(disponivel=False)
+    try:
+        texto = resumo_ia.summarize(req.probabilities, req.n_apostas)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to generate summary: {e}") from e
+    return ResumoResponse(disponivel=True, resumo=texto)
 
 
 @router.get("/criterios", response_model=list[ModelCriteria])

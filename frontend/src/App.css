@@ -257,6 +257,53 @@ td {
   border-radius: 6px;
 }
 
+.ultimo-sorteio {
+  margin-top: 8px;
+}
+
+.ultimo-sorteio h3 {
+  color: var(--game-accent);
+}
+
+.ultimo-sorteio .chave {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.prize-table th,
+.prize-table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid #2a3a4a;
+  white-space: nowrap;
+}
+
+.frequencia {
+  margin-top: 12px;
+}
+
+.frequencia summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--game-accent);
+}
+
+.frequencia-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.frequencia-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .match-number {
   min-width: 1.5em;
   text-align: right;
@@ -564,6 +611,17 @@ tr.double td {
 .criteria-warning,
 .custom-tag {
   color: #fcd34d;
+}
+
+.resumo-ia {
+  background: var(--game-accent-soft);
+  border-left: 4px solid var(--game-accent);
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.resumo-ia p {
+  margin: 8px 0 0;
 }
 
 .custom-tag {

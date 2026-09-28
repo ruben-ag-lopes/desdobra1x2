@@ -52,6 +52,11 @@ export interface DesdobramentoResponse {
   apostas: Outcome[][];
 }
 
+export interface ResumoResponse {
+  disponivel: boolean;
+  resumo: string | null;
+}
+
 export interface LotteryTicket {
   numbers: number[];
   extra_numbers: number[];
@@ -127,4 +132,36 @@ export interface Competition {
   codigo: string;
   nome: string;
   jogos: number;
+}
+
+export interface PrizeTier {
+  nome: string;
+  vencedores_portugal: number | null;
+  vencedores_total: number;
+  valor: string;
+}
+
+export interface UltimoSorteio {
+  game: string;
+  concurso: string;
+  data_sorteio: string;
+  chave: number[];
+  chave_extra: number[];
+  ordem_saida: number[];
+  premios: PrizeTier[];
+}
+
+export interface NumberFrequency {
+  numero: number;
+  saidas: number;
+  percentagem: number;
+  ultimo_sorteio: string;
+  data_ultimo_sorteio: string;
+  ausencias: number;
+}
+
+export interface FrequenciaResponse {
+  game: string;
+  desde: string;
+  numeros: NumberFrequency[];
 }

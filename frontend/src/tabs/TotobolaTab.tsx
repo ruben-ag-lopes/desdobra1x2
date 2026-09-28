@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getContestMatches, getTotobolaDraws, postDesdobramento } from "../api/client";
+import { getContestMatches, getResumoDisponivel, getTotobolaDraws, postDesdobramento, postResumo } from "../api/client";
 import { CopyButton } from "../components/CopyButton";
 import { CriteriaDialog } from "../components/CriteriaDialog";
 import { DrawInfo } from "../components/DrawInfo";
@@ -67,11 +67,18 @@ export function TotobolaTab({ game, title }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [criteria, setCriteria] = useState<Criteria>(loadCriteria);
+  const [resumoDisponivel, setResumoDisponivel] = useState(false);
+  const [resumo, setResumo] = useState<string | null>(null);
+  const [resumoLoading, setResumoLoading] = useState(false);
+  const [resumoError, setResumoError] = useState<string | null>(null);
 
   useEffect(() => {
     getTotobolaDraws()
       .then(setDraws)
       .catch((e) => setDrawsError(String(e)));
+    getResumoDisponivel()
+      .then((r) => setResumoDisponivel(r.disponivel))
+      .catch(() => setResumoDisponivel(false));
   }, []);
 
   const activeDraw = draws?.find((d) => d.game === game);
@@ -136,6 +143,8 @@ export function TotobolaTab({ game, title }: Props) {
   async function handleCalcular(criteriaOverride: Criteria = criteria) {
     setLoading(true);
     setError(null);
+    setResumo(null);
+    setResumoError(null);
     try {
       const res = await postDesdobramento(matches, nApostas, activeDraw, criteriaOverride);
       setResult(res);
@@ -143,6 +152,20 @@ export function TotobolaTab({ game, title }: Props) {
       setError(String(e));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleExplicar() {
+    if (!result) return;
+    setResumoLoading(true);
+    setResumoError(null);
+    try {
+      const res = await postResumo(result.probabilities, nApostas);
+      setResumo(res.resumo);
+    } catch (e) {
+      setResumoError(String(e));
+    } finally {
+      setResumoLoading(false);
     }
   }
 
@@ -294,6 +317,21 @@ export function TotobolaTab({ game, title }: Props) {
             <p className="hint">
               <span className="low-confidence">*</span> Sem histórico destas equipas: estimativa pouco fiável.
             </p>
+          )}
+
+          {resumoDisponivel && (
+            <div className="resumo-ia">
+              <button onClick={handleExplicar} disabled={resumoLoading}>
+                {resumoLoading ? "A gerar resumo..." : "Explicar este desdobramento"}
+              </button>
+              {resumoError && <p className="error">{resumoError}</p>}
+              {resumo && (
+                <>
+                  <p>{resumo}</p>
+                  <p className="hint">Resumo gerado por IA, pode conter imprecisões.</p>
+                </>
+              )}
+            </div>
           )}
 
           <h3>Desdobramento ({result.apostas.length} apostas)</h3>

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Response
 
 from app.cache import cdn_cache
-from app.models import Draw, LotteryGenerateRequest, LotteryGenerateResponse
-from app.scrapers import santacasa_calendar
+from app.models import Draw, FrequenciaResponse, LotteryGenerateRequest, LotteryGenerateResponse, UltimoSorteio
+from app.scrapers import santacasa_calendar, santacasa_results
 from app.services import lottery_generator
 
 router = APIRouter(prefix="/api/lotteries", tags=["lotteries"])
@@ -20,6 +20,30 @@ def get_draw(game: str, response: Response):
         raise HTTPException(status_code=502, detail=f"Failed to fetch {game} draw: {e}") from e
     cdn_cache(response, 900)
     return draw
+
+
+@router.get("/{game}/ultimo-sorteio", response_model=UltimoSorteio)
+def get_ultimo_sorteio(game: str, response: Response):
+    if game not in VALID_GAMES:
+        raise HTTPException(status_code=404, detail=f"Unknown lottery game: {game}")
+    try:
+        result = santacasa_results.get_ultimo_sorteio(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
+    cdn_cache(response, 12 * 3600)
+    return result
+
+
+@router.get("/{game}/frequencia", response_model=FrequenciaResponse)
+def get_frequencia(game: str, response: Response):
+    if game not in VALID_GAMES:
+        raise HTTPException(status_code=404, detail=f"Unknown lottery game: {game}")
+    try:
+        result = santacasa_results.get_frequencia(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s number frequency: {e}") from e
+    cdn_cache(response, 12 * 3600)
+    return result
 
 
 @router.post("/{game}/generate", response_model=LotteryGenerateResponse)

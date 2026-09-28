@@ -112,6 +112,52 @@ class DesdobramentoResponse(BaseModel):
     apostas: list[list[Literal["1", "X", "2"]]]
 
 
+class ResumoRequest(BaseModel):
+    """The already-computed result of a /desdobramento call: the AI only explains these numbers."""
+
+    probabilities: list[ResultProbabilities] = Field(max_length=MAX_MATCHES)
+    n_apostas: int = Field(ge=1, le=MAX_APOSTAS)
+
+
+class ResumoResponse(BaseModel):
+    disponivel: bool  # False when no AI provider is configured (ANTHROPIC_API_KEY unset)
+    resumo: str | None = None
+
+
+class PrizeTier(BaseModel):
+    nome: str
+    vencedores_portugal: int | None = None  # None when the game doesn't split Portugal vs. total (e.g. Totoloto)
+    vencedores_total: int
+    valor: str  # free text: "€ 130.000.000,00" or "20.000/mês x 30 anos" (annuity jackpots)
+
+
+class UltimoSorteio(BaseModel):
+    """Winning key and prize table of a game's most recent draw (docs/plano-numeros-frequentes.md)."""
+
+    game: str
+    concurso: str
+    data_sorteio: date
+    chave: list[int]
+    chave_extra: list[int] = []  # stars, dream number, lucky number...
+    ordem_saida: list[int]
+    premios: list[PrizeTier]
+
+
+class NumberFrequency(BaseModel):
+    numero: int
+    saidas: int
+    percentagem: float
+    ultimo_sorteio: str
+    data_ultimo_sorteio: date
+    ausencias: int  # draws since this number last came out
+
+
+class FrequenciaResponse(BaseModel):
+    game: str
+    desde: date  # data has been tracked since this date (not a rolling window — see the scraper's docstring)
+    numeros: list[NumberFrequency]
+
+
 class LotteryTicket(BaseModel):
     numbers: list[int]
     extra_numbers: list[int] = []

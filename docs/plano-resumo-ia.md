@@ -1,6 +1,11 @@
 # Plano — Resumo gerado por IA do desdobramento
 
-> Só plano, sem implementação.
+> **Feito (27/09/2026):** toda a canalização está implementada — `app/services/resumo_ia.py` (chama a API da
+> Anthropic diretamente por `httpx`, sem SDK novo), `POST /api/totobola/resumo` e `GET /api/totobola/resumo-disponivel`,
+> cache de 24h por conteúdo, botão "Explicar este desdobramento" no Totobola (só aparece se a funcionalidade
+> estiver ativa). **Falta só uma coisa: não existe chave `ANTHROPIC_API_KEY` configurada**, por isso a
+> funcionalidade está desligada (o botão fica escondido, sem erros). Cria a chave em console.anthropic.com e
+> põe-na em `backend/.env` para ativar.
 
 ## Objetivo
 Depois de calcular um desdobramento, mostrar um **resumo em linguagem simples**, escrito por um modelo de IA (Claude ou ChatGPT), que explica em poucas frases porque é que as probabilidades saíram assim — sem inventar dados, só a reformular o que o motor já calculou.

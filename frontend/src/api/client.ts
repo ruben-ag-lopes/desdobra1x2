@@ -5,10 +5,14 @@ import type {
   Draw,
   FixtureInfo,
   FootballGame,
+  FrequenciaResponse,
   LotteryTicket,
   MatchInput,
   ModelCriteria,
   Multipliers,
+  ResultProbabilities,
+  ResumoResponse,
+  UltimoSorteio,
 } from "./types";
 
 // Backend URL. Default: localhost in development, same domain in production (Vercel Services
@@ -58,8 +62,27 @@ export function postDesdobramento(
   });
 }
 
+export function getResumoDisponivel(): Promise<{ disponivel: boolean }> {
+  return request("/api/totobola/resumo-disponivel");
+}
+
+export function postResumo(probabilities: ResultProbabilities[], n_apostas: number): Promise<ResumoResponse> {
+  return request("/api/totobola/resumo", {
+    method: "POST",
+    body: JSON.stringify({ probabilities, n_apostas }),
+  });
+}
+
 export function getLotteryDraw(game: "totoloto" | "euromilhoes" | "eurodreams"): Promise<Draw | null> {
   return request(`/api/lotteries/${game}/draw`);
+}
+
+export function getUltimoSorteio(game: "totoloto" | "euromilhoes" | "eurodreams"): Promise<UltimoSorteio> {
+  return request(`/api/lotteries/${game}/ultimo-sorteio`);
+}
+
+export function getFrequencia(game: "totoloto" | "euromilhoes" | "eurodreams"): Promise<FrequenciaResponse> {
+  return request(`/api/lotteries/${game}/frequencia`);
 }
 
 export function generateLotteryTickets(

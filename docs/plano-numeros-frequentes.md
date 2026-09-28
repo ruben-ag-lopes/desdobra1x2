@@ -1,7 +1,13 @@
 # Plano — Último sorteio, tabela de prémios e números mais frequentes
 
-> Pedido: "planeia primeiro e implementa depois". Este plano confirma, com pesquisa real no site (27/09/2026),
-> onde estão os dados e como os obter. **Nada foi implementado ainda.**
+> **Feito (27/09/2026):** último sorteio (chave + tabela de prémios) e frequência de números para Totoloto,
+> Euromilhões e EuroDreams — `app/scrapers/santacasa_results.py`, `GET /api/lotteries/{game}/ultimo-sorteio` e
+> `/frequencia`, cartões no `LotteryTab.tsx`. Testado com dados reais do site.
+>
+> **Por fazer:** a frequência é **desde sempre** (desde 2011/2004/2023, conforme o jogo), não os últimos 365
+> dias — o site não tem esse filtro (só filtra por número individual). Fazer os últimos 365 dias exigiria
+> percorrer os sorteios de um ano via o "Motor de Pesquisa" e somar nós próprios; não foi feito por já ser um
+> volume de pedidos maior. Totobola/Totobola Extra (só "último sorteio", sem frequência) também ficaram de fora.
 
 ## Aviso a manter sempre visível
 Mostrar a frequência de números **não aumenta a probabilidade de ganhar**: cada sorteio é independente dos
