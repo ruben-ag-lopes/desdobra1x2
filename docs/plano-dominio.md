@@ -58,13 +58,32 @@ O Cloudflare não regista `.pt`, mas pode gerir o DNS de um `.pt` registado nout
 6. Opcional (opção B): Cloudflare Email Routing `contacto@desdobra1x2.pt` para o teu e-mail pessoal, para usar nas páginas legais e no Buy Me a Coffee.
 7. Ativar a renovação automática, ou pôr um lembrete um mês antes do fim do prazo.
 
-## Opcional
-- **`desdobra1x2.com`** no Cloudflare Registrar (preço de custo, cerca de 10 US$/ano), só para proteger o nome e redirecionar para o `.pt`. Não é necessário no início.
-- Até haver domínio, o endereço gratuito `desdobra1x2.vercel.app` serve para testes com amigos.
+## Alternativa: `desdobra1x2.com` (pesquisa de 29/09/2026)
+
+Se preferires um `.com` em vez do (ou a par do) `.pt`, aqui estão todas as opções verificadas, incluindo o Vercel e o Netlify — nenhum dos dois vende domínios por preços fixos publicados, o preço só aparece no motor de pesquisa/checkout de cada um.
+
+| Opção | 1.º ano | Renovação | Notas |
+|---|---|---|---|
+| **Vercel Domains** (vercel.com/domains) | preço de mercado, sem valor fixo publicado (só via `vercel domains search` ou o site) | igual | Sem promoção de arranque. Vantagem: fica tudo integrado, sem configurar DNS. **O domínio grátis do plano Pro não inclui `.com`** (só `.app`, `.dev`, `.online`, `.site`, `.space`, `.store`, `.tech`, `.website`). |
+| **Netlify** (regista domínios diretamente, não é só DNS) | preço de mercado, sem valor fixo publicado | igual | Mesma lógica do Vercel: conveniência, não é o mais barato. |
+| **Cloudflare Registrar** | **~9–10 US$** (preço de custo, sem margem — a própria Cloudflare garante não cobrar acima do que a registry e a ICANN cobram) | igual ao 1.º ano | O mais previsível a longo prazo: nunca sobe. Sem promoção de arranque. |
+| **Porkbun** | **~11,08 US$** (preço fixo, "everyday low price") | igual | Sem truques, mas sem promoção agressiva. |
+| **Namecheap / GoDaddy** | costumam ter promoções agressivas de registo novo no 1.º ano (por vezes abaixo de 2 US$, ocasionalmente perto de 0) | tipicamente 15–20 US$/ano | Valor exato não confirmado (muda com frequência e com códigos promocionais); é normalmente onde aparece o preço mais baixo do 1.º ano, ao estilo da Dominios.pt para o `.pt`. Verificar no checkout se há extras obrigatórios (privacidade WHOIS, etc.) que sobem o total. |
+
+**Se o critério for só "mais barato no 1.º ano"** (o mesmo que escolheste para o `.pt`): confirmar agora o preço de registo novo na Namecheap ou GoDaddy para `desdobra1x2.com` — é onde costuma estar o valor mais baixo, mas precisa de confirmação no checkout no momento da compra.
+
+**Se preferires previsibilidade** (mesmo preço todos os anos, sem promoções que depois disparam): Cloudflare Registrar, ~10 US$/ano.
+
+**Disponibilidade:** ainda não confirmada — verificar no motor de pesquisa de qualquer um destes sites.
+
+**Uso sugerido, mesmo escolhendo o `.pt` como principal:** registar o `.com` (no Cloudflare Registrar, mais barato a manter) só para proteger o nome e redirecionar para o `.pt`. Não é necessário no início.
+
+## Até haver domínio
+O endereço gratuito `desdobra1x2.vercel.app` serve para testes com amigos.
 
 ## Verificação
 - `https://desdobra1x2.pt` abre a app com cadeado válido, e `http://` e `www` redirecionam para `https://desdobra1x2.pt`.
 - `https://desdobra1x2.pt/api/health` devolve `{"status":"ok"}`.
 - WHOIS mostra o titular correto e a data de expiração.
 
-Fontes: Vercel, lista de domínios suportados (vercel.com/docs/domains/supported-domains); comunidade Cloudflare sobre `.pt`; preços nos sites da Site.pt, PTISP, OVHcloud, Amen e Dominios.pt (consultados a 25/09/2026).
+Fontes: Vercel, lista de domínios suportados (vercel.com/docs/domains/supported-domains); comunidade Cloudflare sobre `.pt`; preços nos sites da Site.pt, PTISP, OVHcloud, Amen e Dominios.pt (consultados a 25/09/2026 e a 29/09/2026). Opções `.com`: vercel.com/docs/domains/working-with-domains, docs.netlify.com (registo e compra de domínio), cloudflare.com/products/registrar, porkbun.com/tld/com (consultados a 29/09/2026).
