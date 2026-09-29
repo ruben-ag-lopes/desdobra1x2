@@ -36,3 +36,10 @@ class FeedbackTest(unittest.TestCase):
     def test_contacto_is_optional(self):
         r = self.client.post("/api/feedback", json={"mensagem": "Só uma ideia"})
         self.assertEqual(r.status_code, 200)
+
+    def test_honeypot_pretends_success_but_saves_nothing(self):
+        r = self.client.post("/api/feedback", json={"mensagem": "spam", "empresa": "Acme Corp"})
+        self.assertEqual(r.status_code, 200)
+        from app.services import feedback
+
+        self.assertEqual(feedback.read_suggestions(), [])

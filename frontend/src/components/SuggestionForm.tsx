@@ -5,6 +5,7 @@ export function SuggestionForm() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [mensagem, setMensagem] = useState("");
   const [contacto, setContacto] = useState("");
+  const [empresa, setEmpresa] = useState(""); // honeypot: hidden from people, bots tend to fill it in
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +22,11 @@ export function SuggestionForm() {
     setSending(true);
     setError(null);
     try {
-      await postFeedback(mensagem, contacto);
+      await postFeedback(mensagem, contacto, empresa);
       setSent(true);
       setMensagem("");
       setContacto("");
+      setEmpresa("");
     } catch (e) {
       setError(String(e));
     } finally {
@@ -53,6 +55,17 @@ export function SuggestionForm() {
           <p>Obrigado! A tua sugestão foi enviada.</p>
         ) : (
           <form onSubmit={handleSubmit}>
+            {/* Honeypot: invisible to people, tabIndex -1 keeps keyboard users away from it too. */}
+            <input
+              type="text"
+              name="empresa"
+              value={empresa}
+              onChange={(e) => setEmpresa(e.target.value)}
+              className="honeypot"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
             <label htmlFor="suggestion-mensagem">A tua ideia, crítica ou problema encontrado</label>
             <textarea
               id="suggestion-mensagem"

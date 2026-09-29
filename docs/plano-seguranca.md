@@ -8,10 +8,17 @@
 >   log do servidor. Testado com um erro forçado.
 > - **Limite de tamanho do pedido** (ponto 3): 200 KB, testado com um pedido de 300 KB → `413`.
 >
-> **Continua por fazer** (ver secções abaixo): cabeçalhos de segurança e CORS de produção (pontos 4–5,
-> fazem parte do checklist de publicação), honeypot no formulário, Upstash Redis (fase 2 do rate
-> limiting, só com tráfego a sério), checklist de segredos (ponto 7, fazer no momento do deploy),
-> dependências (ponto 8).
+> **Também feito (29/09/2026, antes de publicar):**
+> - **Cabeçalhos de segurança** (ponto 4): adicionados ao `vercel.json`.
+> - **Honeypot** (ponto 6): campo escondido `empresa` no formulário de sugestões; se vier preenchido, a
+>   API finge sucesso mas não guarda nada. Testado.
+> - **Dependências** (ponto 8): `pip-audit` encontrou 14 vulnerabilidades conhecidas no `starlette`
+>   (dependência indireta do FastAPI, versão desatualizada há 2 anos) — atualizado FastAPI 0.115.0 →
+>   0.141.1 e starlette para 1.7.0. `pip-audit` e `npm audit` limpos depois da atualização. Todos os
+>   testes continuam a passar.
+>
+> **Continua por fazer:** CORS de produção e checklist de segredos (ponto 5 e 7 — só se fazem no
+> momento do deploy, não são código) e Upstash Redis (fase 2 do rate limiting, só com tráfego a sério).
 
 ## Porque isto importa agora
 A app vai deixar de correr só em `localhost` e passa a ter: um domínio público, dois serviços pagos por

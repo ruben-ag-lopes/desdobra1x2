@@ -234,6 +234,7 @@ class Competition(BaseModel):
 class SuggestionRequest(BaseModel):
     mensagem: str = Field(min_length=1, max_length=2000)
     contacto: str | None = Field(default=None, max_length=200)  # optional email, for a reply
+    empresa: str | None = Field(default=None, max_length=200)  # honeypot: hidden from people, bots fill it in
 
     @field_validator("mensagem")
     @classmethod
