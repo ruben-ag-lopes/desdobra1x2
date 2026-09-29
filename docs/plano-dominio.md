@@ -1,6 +1,33 @@
-# Plano — Domínio desdobra1X2.pt (o mais barato possível)
+# Plano — Domínio (o mais barato possível no 1.º ano)
 
 > Só plano: nada foi comprado nem configurado.
+
+## Comparação final entre TLDs (decisão de 29/09/2026)
+Confirmaste que aceitas `.pt`, `.com`, `.net` ou `.org`, com o critério "mais barato no 1.º ano, mesmo
+que a renovação seja mais cara — se o site não tiver sucesso, não renovo ou mudo de fornecedor".
+
+| TLD | Mais barato encontrado | 1.º ano | Renovação | Fonte |
+|---|---|---|---|
+| **`.pt`** | Dominios.pt | **1 € + IVA (≈ 1,23 €)** | ~39,36 € (32 € + IVA) | dominios.pt, confirmado 29/09/2026 |
+| `.org` | Porkbun | 7,98 US$ (promoção) | 11,84 US$ | porkbun.com/tld/org, confirmado 29/09/2026 |
+| `.com` | Cloudflare Registrar | ~9–10 US$ (preço de custo, sem promoção) | igual | cloudflare.com/products/registrar |
+| `.net` | Porkbun | 12,52 US$ | provavelmente igual (Porkbun não faz "bait-and-switch") | porkbun.com/tld/net |
+
+**Recomendação: `.pt` via Dominios.pt continua a ser de longe o mais barato no 1.º ano** (≈1,23 € contra
+o equivalente a 7–12 € dos `.org`/`.com`/`.net` mais baratos que encontrei) — e, por seres um site em
+português para o mercado português, o `.pt` também faz mais sentido de marca. Não encontrei nenhuma
+promoção de `.com`/`.net`/`.org` que chegasse perto de 1 €: a Namecheap e a GoDaddy costumam ser onde
+aparecem essas promoções agressivas, mas os dois sites bloquearam a pesquisa automática (proteção
+anti-bot) — **se quiseres mesmo confirmar se há uma promoção abaixo de ~1 € num `.com`, tens de verificar
+tu próprio no checkout de um dos dois**, porque muda com frequência. Sem essa confirmação, o `.pt` é a
+escolha mais barata que tenho a certeza.
+
+## Sobre a publicidade (lembrete que referiste)
+Não esqueci: queres publicidade no site. Isso **não depende do domínio escolhido**, depende do
+alojamento — o Vercel Hobby (gratuito) só permite uso não comercial, e anúncios contam como uso
+comercial, por isso é preciso o **plano Pro do Vercel** (pago, ver `plano-anuncios-e-apoios.md`) assim
+que ativares anúncios a sério. Até lá (fase 1, só donativos) o Hobby continua a servir. Isto aplica-se
+da mesma forma independentemente de escolheres `.pt`, `.com`, `.net` ou `.org`.
 
 ## Conclusões da pesquisa (25/09/2026)
 - **O Vercel não vende `.pt`** (não está na lista de domínios suportados) e **o Cloudflare Registrar também não** (não suporta `.pt`). O registo tem de ser feito num **registador acreditado pelo .PT** e depois ligado ao Vercel. Isso é gratuito.
@@ -86,4 +113,4 @@ O endereço gratuito `desdobra1x2.vercel.app` serve para testes com amigos.
 - `https://desdobra1x2.pt/api/health` devolve `{"status":"ok"}`.
 - WHOIS mostra o titular correto e a data de expiração.
 
-Fontes: Vercel, lista de domínios suportados (vercel.com/docs/domains/supported-domains); comunidade Cloudflare sobre `.pt`; preços nos sites da Site.pt, PTISP, OVHcloud, Amen e Dominios.pt (consultados a 25/09/2026 e a 29/09/2026). Opções `.com`: vercel.com/docs/domains/working-with-domains, docs.netlify.com (registo e compra de domínio), cloudflare.com/products/registrar, porkbun.com/tld/com (consultados a 29/09/2026).
+Fontes: Vercel, lista de domínios suportados (vercel.com/docs/domains/supported-domains); comunidade Cloudflare sobre `.pt`; preços nos sites da Site.pt, PTISP, OVHcloud, Amen e Dominios.pt (consultados a 25/09/2026 e a 29/09/2026). Opções `.com`/`.net`/`.org`: vercel.com/docs/domains/working-with-domains, docs.netlify.com (registo e compra de domínio), cloudflare.com/products/registrar, porkbun.com/tld/com, porkbun.com/tld/net, porkbun.com/tld/org (consultados a 29/09/2026). Namecheap e GoDaddy bloquearam a pesquisa automática (403) — preços não confirmados.
