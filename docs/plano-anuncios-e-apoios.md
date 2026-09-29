@@ -6,7 +6,7 @@ O rodapé tem o botão **"☕ Apoiar o projeto"**, a apontar para buymeacoffee.c
 ## O que condiciona os anúncios
 1. **Vercel:** o plano gratuito (Hobby) proíbe anúncios, porque contam como uso comercial. Donativos são permitidos. Com anúncios é preciso o plano **Pro** (pago).
 2. **Google AdSense e conteúdo de jogo:** o Google só deixa monetizar páginas com conteúdo de jogo e apostas a editores de uma lista de países, e **Portugal não está nessa lista**. Uma app de desdobramentos do Totobola e números de lotaria será muito provavelmente vista como conteúdo de jogo, com risco de recusa ou de anúncios limitados. Tratar o AdSense como experiência, não como receita garantida.
-3. **Consentimento de cookies (RGPD):** para mostrar anúncios do Google a utilizadores no Espaço Económico Europeu é obrigatório um banner de consentimento certificado pelo Google. Também é preciso uma Política de privacidade.
+3. **Consentimento de cookies (RGPD):** para mostrar anúncios do Google a utilizadores no Espaço Económico Europeu é obrigatório um banner de consentimento certificado pelo Google. ✅ **Política de Privacidade e Termos de Uso já escritos** (`frontend/public/privacidade.html` e `termos.html`, ligados no rodapé) — a política já avisa que falta o banner de consentimento antes de os anúncios aparecerem a visitantes na UE.
 4. **Publicidade a jogo em Portugal:** anúncios ou links de casas de apostas estão sujeitos às regras de publicidade a jogos e apostas (Código da Publicidade) e à supervisão do SRIJ. Isso inclui não se dirigir a menores e incluir mensagens de jogo responsável. **Confirmar com um jurista antes** de qualquer acordo de afiliação.
 
 ## Estratégia recomendada, por fases
