@@ -1,8 +1,17 @@
 # Plano — Guardas de segurança antes do go-live
 
-> ⚠️ **Isto é um plano, não está implementado.** Nenhum destes itens existe hoje no código. Os itens
-> marcados **🔴 Bloqueador** não devem ficar por fazer quando o site for publicado a sério (domínio
-> próprio, tráfego real) — os **🟡 Recomendado** podem esperar pela fase seguinte sem grande risco.
+> **Feito (29/09/2026), por teres comprado o domínio e ires publicar já:**
+> - **Rate limiting** (ponto 1, fase 1 — em memória, `slowapi`): `/resumo` 5/min, `/futebol/jogos` 20/min,
+>   `/feedback` 5/min, `/desdobramento` 20/min. Testado: o 6.º pedido num minuto dá `429`.
+> - **Erros sem detalhe interno** (ponto 2): um `exception_handler` global em `app/main.py` troca
+>   qualquer resposta 5xx por uma mensagem genérica + código de referência; o detalhe real só fica no
+>   log do servidor. Testado com um erro forçado.
+> - **Limite de tamanho do pedido** (ponto 3): 200 KB, testado com um pedido de 300 KB → `413`.
+>
+> **Continua por fazer** (ver secções abaixo): cabeçalhos de segurança e CORS de produção (pontos 4–5,
+> fazem parte do checklist de publicação), honeypot no formulário, Upstash Redis (fase 2 do rate
+> limiting, só com tráfego a sério), checklist de segredos (ponto 7, fazer no momento do deploy),
+> dependências (ponto 8).
 
 ## Porque isto importa agora
 A app vai deixar de correr só em `localhost` e passa a ter: um domínio público, dois serviços pagos por

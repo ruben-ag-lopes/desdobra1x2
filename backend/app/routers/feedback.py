@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.models import SuggestionRequest
+from app.rate_limit import limiter
 from app.services import feedback
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
 
 @router.post("")
-def submit(req: SuggestionRequest) -> dict:
+@limiter.limit("5/minute")
+def submit(request: Request, req: SuggestionRequest) -> dict:
     try:
         feedback.save_suggestion(req.mensagem, req.contacto)
     except Exception as e:

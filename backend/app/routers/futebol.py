@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import TypeAdapter, ValidationError
 
 from app.cache import cdn_cache
 from app.models import Competition, CriterionId, FootballGame, Multiplier
+from app.rate_limit import limiter
 from app.services import futebol
 
 router = APIRouter(prefix="/api/futebol", tags=["futebol"])
@@ -21,7 +22,9 @@ def get_competicoes(response: Response):
 
 
 @router.get("/jogos", response_model=list[FootballGame])
+@limiter.limit("20/minute")
 def get_jogos(
+    request: Request,
     response: Response,
     competicao: str | None = Query(None, description="league code, e.g. P1"),
     q: str | None = Query(None, max_length=60, description="team or competition name"),

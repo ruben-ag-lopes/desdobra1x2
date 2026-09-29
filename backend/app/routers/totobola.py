@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Response
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request, Response
 
 from app.cache import cdn_cache
 from app.models import (
@@ -10,6 +10,7 @@ from app.models import (
     ResumoRequest,
     ResumoResponse,
 )
+from app.rate_limit import limiter
 from app.scrapers import santacasa_calendar
 from app.services import criteria, resumo_ia, totobola_engine
 from app.storage import bigquery
@@ -40,7 +41,8 @@ def get_matches(contest_id: str, response: Response):
 
 
 @router.post("/desdobramento", response_model=DesdobramentoResponse)
-def desdobramento(req: DesdobramentoRequest, background: BackgroundTasks):
+@limiter.limit("20/minute")
+def desdobramento(request: Request, req: DesdobramentoRequest, background: BackgroundTasks):
     if not req.matches:
         raise HTTPException(status_code=400, detail="No matches provided")
 
@@ -57,7 +59,8 @@ def resumo_disponivel() -> dict:
 
 
 @router.post("/resumo", response_model=ResumoResponse)
-def resumo(req: ResumoRequest):
+@limiter.limit("5/minute")
+def resumo(request: Request, req: ResumoRequest):
     """AI-written explanation of an already-computed desdobramento (docs/plano-resumo-ia.md)."""
     if not resumo_ia.enabled():
         return ResumoResponse(disponivel=False)
