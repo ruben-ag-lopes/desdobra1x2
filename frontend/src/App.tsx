@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { useState } from "react";
 import "./App.css";
 import logo from "./assets/logo.png";
@@ -117,6 +118,7 @@ function App() {
       </main>
 
       <SupportFooter />
+      <Analytics />
     </div>
   );
 }
