@@ -144,6 +144,22 @@ class UltimoSorteio(BaseModel):
     premios: list[PrizeTier]
 
 
+class TotobolaResultado(BaseModel):
+    numero: str  # "1".."13" or "Super 14"
+    jogo: str  # "Portugal - Noruega"
+    resultado: Literal["1", "X", "2"]
+
+
+class UltimoConcursoTotobola(BaseModel):
+    """Results and prize table of a Totobola/Totobola Extra contest's last draw."""
+
+    game: str
+    concurso: str
+    data_concurso: date
+    resultados: list[TotobolaResultado]
+    premios: list[PrizeTier]
+
+
 class NumberFrequency(BaseModel):
     numero: int
     saidas: int

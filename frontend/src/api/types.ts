@@ -151,6 +151,20 @@ export interface UltimoSorteio {
   premios: PrizeTier[];
 }
 
+export interface TotobolaResultado {
+  numero: string;
+  jogo: string;
+  resultado: "1" | "X" | "2";
+}
+
+export interface UltimoConcursoTotobola {
+  game: string;
+  concurso: string;
+  data_concurso: string;
+  resultados: TotobolaResultado[];
+  premios: PrizeTier[];
+}
+
 export interface NumberFrequency {
   numero: number;
   saidas: number;

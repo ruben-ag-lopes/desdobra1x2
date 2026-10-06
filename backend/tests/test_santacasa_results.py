@@ -112,3 +112,37 @@ class FrequenciaTest(unittest.TestCase):
         with patch.object(sr, "_soup", return_value=BeautifulSoup("<p>empty</p>", "html.parser")):
             with self.assertRaises(ValueError):
                 sr._fetch_frequencia("totoloto")
+
+
+_TOTOBOLA_HTML = """
+<span class="dataInfo">Concurso: 40/2026 - domingo<br>Data do Concurso - 04/10/2026</span>
+<div class="keyMiddle left">
+  <ul><li>1. Portugal - Noruega</li><li>1</li></ul>
+  <ul><li>2. Estónia - Luxemburgo</li><li>X</li></ul>
+  <ul><li>Super 14. Croácia - Inglaterra</li><li>2</li></ul>
+</div>
+<div class="stripped betMiddle fourcol regPad">
+  <ul class="colums"><li>Super 14</li><li>13 Jogos + Super 14</li><li>6</li><li>(1) € 16.914,83</li></ul>
+  <ul class="colums"><li>1.º Prémio</li><li>13 Jogos</li><li>9</li><li>€ 1.600,04</li></ul>
+</div>
+"""
+
+
+class UltimoConcursoTotobolaTest(unittest.TestCase):
+    def test_parses_results_and_prizes(self):
+        with patch.object(sr, "_soup", return_value=BeautifulSoup(_TOTOBOLA_HTML, "html.parser")):
+            result = sr._fetch_ultimo_concurso_totobola("totobola")
+        self.assertEqual(result.concurso, "40/2026 - domingo")
+        self.assertEqual(str(result.data_concurso), "2026-10-04")
+        self.assertEqual(len(result.resultados), 3)
+        self.assertEqual(result.resultados[0].numero, "1")
+        self.assertEqual(result.resultados[0].jogo, "Portugal - Noruega")
+        self.assertEqual(result.resultados[0].resultado, "1")
+        self.assertEqual(result.resultados[2].numero, "Super 14")
+        self.assertEqual(len(result.premios), 2)
+        self.assertEqual(result.premios[0].valor, "(1) € 16.914,83")
+
+    def test_no_results_raises(self):
+        with patch.object(sr, "_soup", return_value=BeautifulSoup("<p>empty</p>", "html.parser")):
+            with self.assertRaises(ValueError):
+                sr._fetch_ultimo_concurso_totobola("totobola")

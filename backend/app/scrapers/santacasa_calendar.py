@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import re
 
@@ -33,13 +33,11 @@ def _decode(content: bytes) -> str:
         return content.decode("cp1252", errors="replace")
 
 
-def _fetch_contest_matches(contest_id: str) -> list[FixtureInfo]:
-    resp = httpx.post(
-        _URLS["totobola"] + "verDetalhe",
-        data={"Contest": f"{contest_id}.0"},
-        timeout=15,
-        follow_redirects=True,
-    )
+def _fetch_contest_matches() -> list[FixtureInfo]:
+    """Fixtures of the current Totobola contest. The site used to publish a separate
+    'verDetalhe' lookup by contest id; since a 2026-10 redesign the 13 games are listed
+    directly on the JogarTotobola page, and there is always exactly one active contest."""
+    resp = httpx.get(_URLS["totobola"], timeout=15, follow_redirects=True)
     resp.raise_for_status()
     soup = BeautifulSoup(_decode(resp.content), "html.parser")
 
@@ -57,40 +55,57 @@ def _fetch_contest_matches(contest_id: str) -> list[FixtureInfo]:
 
 
 def get_contest_matches(contest_id: str) -> list[FixtureInfo]:
-    """Fixtures of a Totobola/Totobola Extra contest, straight from the official site."""
+    """Fixtures of the current Totobola contest. `contest_id` is only a cache key / URL segment
+    now (kept for API compatibility) — the site has no per-contest lookup anymore, see above."""
     if not re.fullmatch(r"\d+", contest_id):
         raise ValueError("invalid contest id")
-    return _cache.get_or_set(f"totobola_matches:{contest_id}", lambda: _fetch_contest_matches(contest_id))
+    return _cache.get_or_set(f"totobola_matches:{contest_id}", _fetch_contest_matches)
+
+
+_TOTOBOLA_TITLE = re.compile(r"concurso\s*n?º?\s*(\d+/\d{4})", re.IGNORECASE)
+_TOTOBOLA_DATE = re.compile(r"(\d{2}/\d{2}/\d{4}).*?(\d{1,2})h(\d{2})?", re.IGNORECASE)
 
 
 def _fetch_totobola_draws() -> list[Draw]:
+    """The active Totobola concurso, from the 'Concurso Nº.../em jogo até às Xh00' banner.
+
+    Totobola and Totobola Extra share the same 13 games and the same deadline — Extra is an
+    add-on bet on the same coupon, not a separate contest — so both Draws carry identical data.
+    The site no longer publishes a separate draw date; it draws the day after betting closes.
+    """
     resp = httpx.get(_URLS["totobola"], timeout=15, follow_redirects=True)
     resp.raise_for_status()
     soup = BeautifulSoup(_decode(resp.content), "html.parser")
 
-    draws: list[Draw] = []
-    for block in soup.select("div.tbolaPlayBlock"):
-        items = [li.get_text(strip=True) for li in block.select("div.betMiddle ul li")]
-        # Expected order: [concurso, deadline, tipo, sorteio_date, preco]
-        if len(items) < 4:
-            continue
-        concurso, deadline, tipo, sorteio = items[0], items[1], items[2], items[3]
-        form = block.select_one("form input[name=Contest]")
-        contest_id = form["value"].split(".")[0] if form and form.get("value") else None
-        game = "totobola_extra" if "extra" in tipo.lower() else "totobola"
-        try:
-            draws.append(
-                Draw(
-                    game=game,
-                    concurso=concurso,
-                    contest_id=contest_id,
-                    fecha_apostas=_parse_pt_datetime(deadline),
-                    data_sorteio=_parse_pt_date(sorteio),
-                )
-            )
-        except ValueError:
-            continue
-    return draws
+    # The same .nextDraw markup is reused by a sidebar jackpot widget for other games; the real
+    # Totobola banner is always the first one in document order.
+    banner = soup.select_one("em.nextDraw")
+    title_el = banner.select_one(".title") if banner else None
+    date_el = banner.select_one(".date") if banner else None
+    if not title_el or not date_el:
+        return []
+    m_title = _TOTOBOLA_TITLE.search(title_el.get_text(" ", strip=True))
+    m_date = _TOTOBOLA_DATE.search(date_el.get_text(" ", strip=True))
+    if not m_title or not m_date:
+        return []
+
+    concurso = m_title.group(1)
+    deadline_day = _parse_pt_date(m_date.group(1))
+    deadline = datetime(
+        deadline_day.year, deadline_day.month, deadline_day.day, int(m_date.group(2)), int(m_date.group(3) or 0)
+    )
+    contest_id = concurso.replace("/", "")
+
+    return [
+        Draw(
+            game=game,
+            concurso=concurso,
+            contest_id=contest_id,
+            fecha_apostas=deadline,
+            data_sorteio=deadline_day + timedelta(days=1),
+        )
+        for game in ("totobola", "totobola_extra")
+    ]
 
 
 def get_totobola_draws() -> list[Draw]:

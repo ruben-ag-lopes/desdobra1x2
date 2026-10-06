@@ -9,13 +9,14 @@ per game (jumps beyond the dropdown's own range land on other games' draws or on
 result would be silently wrong. The dropdown's own list is what the site itself vouches for.
 """
 
+import re
 from datetime import date, datetime
 
 import httpx
 from bs4 import BeautifulSoup
 
 from app.cache import TTLCache
-from app.models import FrequenciaResponse, NumberFrequency, PrizeTier, UltimoSorteio
+from app.models import FrequenciaResponse, NumberFrequency, PrizeTier, TotobolaResultado, UltimoConcursoTotobola, UltimoSorteio
 
 _cache = TTLCache(ttl_seconds=24 * 3600)
 
@@ -23,6 +24,10 @@ _RESULT_URLS = {
     "totoloto": "https://www.jogossantacasa.pt/web/SCCartazResult/totolotoNew",
     "euromilhoes": "https://www.jogossantacasa.pt/web/SCCartazResult/",
     "eurodreams": "https://www.jogossantacasa.pt/web/ResultsBoard/EuroDreams",
+}
+_TOTOBOLA_RESULT_URLS = {
+    "totobola": "https://www.jogossantacasa.pt/web/SCCartazResult/bolaNormal",
+    "totobola_extra": "https://www.jogossantacasa.pt/web/SCCartazResult/bolaExtra1",
 }
 # Highest possible main number, so numbers absent from the sample still show up (0 saídas).
 _MAX_NUMBER = {"totoloto": 49, "euromilhoes": 50, "eurodreams": 40}
@@ -69,11 +74,7 @@ def _recent_contests(soup: BeautifulSoup) -> list[str]:
     return [opt["value"] for opt in select.select("option") if opt.get("value")]
 
 
-def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
-    soup = _soup(_RESULT_URLS[game])
-    concurso, data_sorteio = _draw_info(soup)
-    chave, chave_extra, ordem_saida = _winning_key(soup)
-
+def _prize_tiers(soup: BeautifulSoup) -> list[PrizeTier]:
     premios = []
     for row in soup.select("div.stripped.betMiddle ul[class*='colum']"):
         cells = [li.get_text(strip=True) for li in row.select("li")]
@@ -87,9 +88,16 @@ def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
                 nome=f"{nome} — {acertos}",
                 vencedores_portugal=vencedores_portugal,
                 vencedores_total=vencedores_total,
-                valor=valor.replace("\xa0", " ").strip(),
+                valor=re.sub(r"\s+", " ", valor.replace("\xa0", " ")).strip(),
             )
         )
+    return premios
+
+
+def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
+    soup = _soup(_RESULT_URLS[game])
+    concurso, data_sorteio = _draw_info(soup)
+    chave, chave_extra, ordem_saida = _winning_key(soup)
 
     return UltimoSorteio(
         game=game,
@@ -98,7 +106,26 @@ def _fetch_ultimo_sorteio(game: str) -> UltimoSorteio:
         chave=chave,
         chave_extra=chave_extra,
         ordem_saida=ordem_saida,
-        premios=premios,
+        premios=_prize_tiers(soup),
+    )
+
+
+def _fetch_ultimo_concurso_totobola(game: str) -> UltimoConcursoTotobola:
+    soup = _soup(_TOTOBOLA_RESULT_URLS[game])
+    concurso, data_concurso = _draw_info(soup)
+
+    resultados = []
+    for group in soup.select("div.keyMiddle.left > ul"):
+        cells = [li.get_text(strip=True) for li in group.select("li")]
+        if len(cells) != 2 or cells[1] not in ("1", "X", "2"):
+            continue
+        numero, _, jogo = cells[0].partition(".")
+        resultados.append(TotobolaResultado(numero=numero.strip(), jogo=jogo.strip(), resultado=cells[1]))
+    if not resultados:
+        raise ValueError(f"Could not find the match results for {game}")
+
+    return UltimoConcursoTotobola(
+        game=game, concurso=concurso, data_concurso=data_concurso, resultados=resultados, premios=_prize_tiers(soup)
     )
 
 
@@ -141,6 +168,10 @@ def _fetch_frequencia(game: str) -> FrequenciaResponse:
 
 def get_ultimo_sorteio(game: str) -> UltimoSorteio:
     return _cache.get_or_set(f"ultimo_sorteio:{game}", lambda: _fetch_ultimo_sorteio(game))
+
+
+def get_ultimo_concurso_totobola(game: str) -> UltimoConcursoTotobola:
+    return _cache.get_or_set(f"ultimo_concurso_totobola:{game}", lambda: _fetch_ultimo_concurso_totobola(game))
 
 
 def get_frequencia(game: str) -> FrequenciaResponse:

@@ -1,11 +1,90 @@
 import { useEffect, useState } from "react";
-import { getContestMatches, getResumoDisponivel, getTotobolaDraws, postDesdobramento, postResumo } from "../api/client";
+import {
+  getContestMatches,
+  getResumoDisponivel,
+  getTotobolaDraws,
+  getUltimoConcursoTotobola,
+  postDesdobramento,
+  postResumo,
+} from "../api/client";
 import { CopyButton } from "../components/CopyButton";
 import { CriteriaDialog } from "../components/CriteriaDialog";
 import { DrawInfo } from "../components/DrawInfo";
-import type { Criteria, DesdobramentoResponse, Draw, MatchInput, Outcome, ResultProbabilities } from "../api/types";
+import type {
+  Criteria,
+  DesdobramentoResponse,
+  Draw,
+  MatchInput,
+  Outcome,
+  ResultProbabilities,
+  UltimoConcursoTotobola,
+} from "../api/types";
 import { isCriteriaCustom, loadCriteria, saveCriteria } from "../criteriaProfile";
 import { OUTCOMES, pickLabel, togglePick } from "../picks";
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-PT");
+}
+
+function formatNumber(n: number): string {
+  return n.toLocaleString("pt-PT");
+}
+
+function UltimoConcursoCard({ concurso }: { concurso: UltimoConcursoTotobola }) {
+  return (
+    <div className="ultimo-sorteio">
+      <h3>
+        Último concurso: {concurso.concurso} — {formatDate(concurso.data_concurso)}
+      </h3>
+      <div className="table-scroll">
+        <table className="prize-table">
+          <thead>
+            <tr>
+              <th>Jogo</th>
+              <th></th>
+              <th>Result.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {concurso.resultados.map((r) => (
+              <tr key={r.numero}>
+                <td>{r.numero}</td>
+                <td>{r.jogo}</td>
+                <td>
+                  <strong>{r.resultado}</strong>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="table-scroll">
+        <table className="prize-table">
+          <thead>
+            <tr>
+              <th>Prémio</th>
+              <th>Vencedores</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {concurso.premios.map((p) => (
+              <tr key={p.nome}>
+                <td>{p.nome}</td>
+                <td>
+                  {p.vencedores_portugal != null
+                    ? `${formatNumber(p.vencedores_portugal)} (PT) / ${formatNumber(p.vencedores_total)}`
+                    : formatNumber(p.vencedores_total)}
+                </td>
+                <td>{p.valor}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   game: "totobola" | "totobola_extra";
@@ -70,6 +149,8 @@ export function TotobolaTab({ game, title }: Props) {
   const [resumo, setResumo] = useState<string | null>(null);
   const [resumoLoading, setResumoLoading] = useState(false);
   const [resumoError, setResumoError] = useState<string | null>(null);
+  const [ultimoConcurso, setUltimoConcurso] = useState<UltimoConcursoTotobola | null>(null);
+  const [ultimoConcursoError, setUltimoConcursoError] = useState<string | null>(null);
 
   useEffect(() => {
     getTotobolaDraws()
@@ -79,6 +160,14 @@ export function TotobolaTab({ game, title }: Props) {
       .then((r) => setResumoDisponivel(r.disponivel))
       .catch(() => setResumoDisponivel(false));
   }, []);
+
+  useEffect(() => {
+    setUltimoConcurso(null);
+    setUltimoConcursoError(null);
+    getUltimoConcursoTotobola(game)
+      .then(setUltimoConcurso)
+      .catch((e) => setUltimoConcursoError(String(e)));
+  }, [game]);
 
   const activeDraw = draws?.find((d) => d.game === game);
   const contestId = activeDraw?.contest_id ?? null;
@@ -350,6 +439,9 @@ export function TotobolaTab({ game, title }: Props) {
           </div>
         </div>
       )}
+
+      {ultimoConcursoError && <p className="hint">Não foi possível obter o último concurso ({ultimoConcursoError}).</p>}
+      {ultimoConcurso && <UltimoConcursoCard concurso={ultimoConcurso} />}
     </div>
   );
 }

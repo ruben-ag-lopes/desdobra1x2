@@ -12,6 +12,7 @@ import type {
   Multipliers,
   ResultProbabilities,
   ResumoResponse,
+  UltimoConcursoTotobola,
   UltimoSorteio,
 } from "./types";
 
@@ -37,6 +38,10 @@ export function getTotobolaDraws(): Promise<Draw[]> {
 
 export function getContestMatches(contestId: string): Promise<FixtureInfo[]> {
   return request(`/api/totobola/draws/${contestId}/matches`);
+}
+
+export function getUltimoConcursoTotobola(game: "totobola" | "totobola_extra"): Promise<UltimoConcursoTotobola> {
+  return request(`/api/totobola/${game}/ultimo-concurso`);
 }
 
 export function getCriterios(modelos: string[]): Promise<ModelCriteria[]> {

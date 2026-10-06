@@ -9,11 +9,14 @@ from app.models import (
     ModelCriteria,
     ResumoRequest,
     ResumoResponse,
+    UltimoConcursoTotobola,
 )
 from app.rate_limit import limiter
-from app.scrapers import santacasa_calendar
+from app.scrapers import santacasa_calendar, santacasa_results
 from app.services import criteria, resumo_ia, totobola_engine
 from app.storage import bigquery
+
+_TOTOBOLA_GAMES = {"totobola", "totobola_extra"}
 
 router = APIRouter(prefix="/api/totobola", tags=["totobola"])
 
@@ -38,6 +41,18 @@ def get_matches(contest_id: str, response: Response):
         raise HTTPException(status_code=502, detail=f"Failed to fetch contest matches: {e}") from e
     cdn_cache(response, 900)
     return fixtures
+
+
+@router.get("/{game}/ultimo-concurso", response_model=UltimoConcursoTotobola)
+def get_ultimo_concurso(game: str, response: Response):
+    if game not in _TOTOBOLA_GAMES:
+        raise HTTPException(status_code=404, detail=f"Unknown game: {game}")
+    try:
+        result = santacasa_results.get_ultimo_concurso_totobola(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last results: {e}") from e
+    cdn_cache(response, 12 * 3600)
+    return result
 
 
 @router.post("/desdobramento", response_model=DesdobramentoResponse)
