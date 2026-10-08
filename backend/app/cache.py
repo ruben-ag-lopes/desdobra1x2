@@ -14,12 +14,14 @@ class TTLCache:
         self.ttl_seconds = ttl_seconds
         self._store: dict[str, tuple[float, Any]] = {}
 
-    def get_or_set(self, key: str, factory: Callable[[], Any]) -> Any:
+    def get_or_set(self, key: str, factory: Callable[[], Any], cache_empty: bool = True) -> Any:
+        """`cache_empty=False` keeps an empty result (e.g. no contest found) from being served for a whole TTL."""
         now = time.time()
         cached = self._store.get(key)
         if cached is not None and now - cached[0] < self.ttl_seconds:
             return cached[1]
 
         value = factory()
-        self._store[key] = (now, value)
+        if cache_empty or value:
+            self._store[key] = (now, value)
         return value

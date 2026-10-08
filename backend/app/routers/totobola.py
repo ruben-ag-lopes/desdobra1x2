@@ -27,7 +27,8 @@ def get_draws(response: Response):
         draws = santacasa_calendar.get_totobola_draws()
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to fetch Totobola calendar: {e}") from e
-    cdn_cache(response, 900)
+    if draws:  # an empty answer (no contest found) must not be pinned in the CDN
+        cdn_cache(response, 900)
     return draws
 
 
