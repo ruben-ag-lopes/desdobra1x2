@@ -103,6 +103,8 @@ export interface ModelCriteria {
   titulo: string;
   descricao: string;
   criterios: Criterion[];
+  /** Weight of every criterion in the model that uses all five (what customising works on). */
+  pesos_completos: Record<string, number>;
   dados: string;
   notas: string[];
 }

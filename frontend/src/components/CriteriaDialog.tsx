@@ -3,7 +3,9 @@ import { getCriterios } from "../api/client";
 import type { Criteria, CriterionId, ModelCriteria, Shares } from "../api/types";
 import { customOnly, emptyCriteria, isCriteriaCustom } from "../criteriaProfile";
 import {
+  ALL_IDS,
   defaultShares,
+  fullWeights,
   sameShares,
   setShare,
   sharesFromMultipliers,
@@ -40,14 +42,12 @@ const INFO: Record<CriterionId, string> = {
 const WEIGHT_NOTE = "O peso de cada critério é a parte da variação das probabilidades que se deve a ele, medida nos jogos mais recentes.";
 
 /** What the dialog shows when opened: the user's saved shares, else the predefined ones. */
-function initialDraft(criteria: Criteria, defaults: Shares): Shares {
-  const ids = Object.keys(defaults);
+function initialDraft(criteria: Criteria, defaults: Shares, full: Record<CriterionId, number>): Shares {
   const saved = criteria.partilhas;
-  const savedIds = Object.keys(saved);
-  const total = Object.values(saved).reduce((a, b) => a + (b ?? 0), 0);
-  if (savedIds.length === ids.length && savedIds.every((i) => ids.includes(i)) && total === 100) return saved;
+  const total = ALL_IDS.reduce((sum, i) => sum + (saved[i] ?? 0), 0);
+  if (Object.keys(saved).length === ALL_IDS.length && total === 100) return saved;
   if (Object.keys(customOnly(criteria.multiplicadores)).length > 0) {
-    return sharesFromMultipliers(criteria.multiplicadores, defaults);
+    return sharesFromMultipliers(criteria.multiplicadores, full);
   }
   return defaults;
 }
@@ -62,8 +62,9 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
   const current = criteria ?? emptyCriteria();
   const trained = (models ?? []).filter((m) => m.criterios.some((c) => c.id && TRAINED_IDS.has(c.id)));
   const defaults = defaultShares(trained, usage);
-  const rows = Object.keys(defaults) as CriterionId[];
-  const applied = initialDraft(current, defaults);
+  const full = fullWeights(trained, usage);
+  const rows = trained.length > 0 ? ALL_IDS : [];
+  const applied = initialDraft(current, defaults, full);
   const changed = !sameShares(draft, applied);
   const canReset = isCriteriaCustom(current) || !sameShares(draft, defaults);
 
@@ -75,21 +76,20 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
     getCriterios([...usage.keys()])
       .then((list) => {
         const used = list.filter((m) => m.criterios.some((c) => c.id && TRAINED_IDS.has(c.id)));
-        setDraft(initialDraft(current, defaultShares(used, usage)));
+        setDraft(initialDraft(current, defaultShares(used, usage), fullWeights(used, usage)));
         setModels(list);
       })
       .catch((e) => setError(String(e)));
   }
 
   function apply(next: Shares | null) {
-    const multiplicadores = next ? sharesToMultipliers(next, defaults) : {};
-    const custom = Object.keys(multiplicadores).length > 0;
-    // Keep any customisation of criteria this boletim doesn't show; reset clears everything.
-    const untouched = next ? Object.fromEntries(Object.entries(current.multiplicadores).filter(([id]) => !rows.includes(id as CriterionId))) : {};
+    // Choosing the predefined shares again is the same as resetting: back to the validated models.
+    const reset = next === null || sameShares(next, defaults);
+    const multiplicadores = reset ? {} : sharesToMultipliers(next, full);
     onApply?.({
-      multiplicadores: { ...untouched, ...multiplicadores },
-      pesosAntigos: next ? current.pesosAntigos : {},
-      partilhas: next && custom ? next : {},
+      multiplicadores,
+      pesosAntigos: reset ? {} : current.pesosAntigos,
+      partilhas: reset || Object.keys(multiplicadores).length === 0 ? {} : next,
     });
     dialogRef.current?.close();
   }
@@ -139,7 +139,6 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
                         max={100}
                         step={1}
                         value={draft[id] ?? 0}
-                        disabled={rows.length < 2}
                         onChange={(e) => setDraft(setShare(draft, id, Number(e.target.value)))}
                       />
                       <output htmlFor={`share-${id}`}>{draft[id] ?? 0}%</output>
@@ -185,6 +184,14 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
                     </dd>
                   </div>
                 )}
+                <div>
+                  <dt>Personalizar</dt>
+                  <dd>
+                    Um critério a 0% nas previsões predefinidas (por exemplo, o ataque nas ligas de clubes) só passa a
+                    contar quando lhe dás peso. O efeito de cada alteração é medido num modelo que usa os cinco
+                    critérios e somado à previsão predefinida.
+                  </dd>
+                </div>
               </dl>
             )}
 

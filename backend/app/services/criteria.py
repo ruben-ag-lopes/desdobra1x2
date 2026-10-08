@@ -100,6 +100,8 @@ def _trained_criteria(version: str) -> ModelCriteria | None:
         titulo=info["title"],
         descricao=text["descricao"],
         criterios=criterios,
+        # A criterion under 0.5% is dropped from the weights; a small floor keeps every ratio finite.
+        pesos_completos={cid: round(max(info["weights_full"].get(cid, 0.0), 0.005), 3) for cid in CRITERIA},
         dados=f"{info['source']} — {info['n_matches']} jogos, {periodo}",
         notas=[
             "O peso de cada critério é a parte da variação das probabilidades que se deve a ele, "

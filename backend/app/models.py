@@ -205,6 +205,9 @@ class ModelCriteria(BaseModel):
     titulo: str
     descricao: str
     criterios: list[Criterion]
+    # Weight of every criterion in the model that uses all five (what customising works on); see
+    # trained_model._full. Equals `criterios` for models that already use all of them.
+    pesos_completos: dict[str, float] = {}
     dados: str = ""
     notas: list[str] = []
 

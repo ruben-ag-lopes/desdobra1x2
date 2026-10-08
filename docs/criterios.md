@@ -102,10 +102,12 @@ python -m app.research.backtest --international
 - Os mercados de golos têm ganho modesto sobre a média da liga.
 
 ## Critérios personalizados
-No pop-up "Critérios e pesos", cada critério tem um cursor de 0% a 100%:
-- **100%** é o modelo predefinido, sem alterações.
-- **0%** ignora o critério: as suas variáveis passam para o valor "sem informação".
+No pop-up "Critérios" há sempre os **cinco critérios** (força das equipas, fator casa, ataque, defesa e confronto direto), com o peso **predefinido** ao lado de uma coluna **personalizada** que soma **sempre 100%**: quando subes um critério, os outros descem na mesma proporção.
 
-Formalmente, cada variável `x` do critério passa a `neutro + m × (x − neutro)`, onde `m` é o multiplicador e o valor neutro é a média dos jogos de treino (ou 0 para o Elo, o fator casa e o confronto direto). Os multiplicadores aplicam-se a todos os jogos com modelo treinado. A escolha fica guardada no teu navegador, e "Repor predefinidos" volta sempre ao modelo original.
+**Do que escolhes ao que o servidor calcula.** O peso de um critério é proporcional ao seu multiplicador vezes o seu peso no modelo completo, por isso o multiplicador é `escolhido ÷ peso`, escalado para que o maior seja 1 (nada é amplificado). Cada variável `x` do critério passa a `neutro + m × (x − neutro)`, onde o valor neutro é a média dos jogos de treino (ou 0 para o Elo, o fator casa e o confronto direto).
+
+**Ligas de clubes (modelos de Elo).** Estes modelos ganharam os backtests usando só dois critérios, por isso o ataque, a defesa e o confronto direto não teriam efeito. Para os poderes configurar, ajusta-se um modelo completo (Poisson com os cinco critérios, `trained_model._full`) aos mesmos jogos, mas **a previsão predefinida não muda**: ao personalizar, soma-se à previsão do modelo validado apenas a diferença que a tua alteração provoca no modelo completo, medida contra o modelo completo configurado como o validado (`_base_multipliers`: os critérios que o modelo validado não usa ficam a 0). Assim, deixar tudo como está dá exatamente a previsão predefinida, um critério a 0% fica de fora, e uma pequena alteração dá um pequeno movimento. Nas seleções e nas ligas de Poisson o modelo já usa os cinco, por isso a conta é direta.
+
+A escolha fica guardada no teu navegador, e "Repor predefinidos" volta sempre ao modelo original.
 
 **Os critérios alterados não foram validados.** Os predefinidos são os que tiveram o menor erro nos testes.

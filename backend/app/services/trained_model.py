@@ -19,7 +19,7 @@ import numpy as np
 from app.cache import TTLCache
 from app.research import data
 from app.research.features import MIN_PRIOR_GAMES, FeatureState, Rows, build_rows_and_state, fixture_rows
-from app.research.importance import apply_multipliers, criteria_weights, neutral_values
+from app.research.importance import CRITERIA, apply_multipliers, criteria_weights, neutral_values
 from app.research.models import MAX_GOALS, OrderedLogitElo, PoissonModel
 from app.scrapers.elo_ratings import _PT_TO_EN
 
@@ -314,6 +314,7 @@ def model_info(version: str) -> dict | None:
         "source": spec.source,
         "kind": spec.kind,
         "weights": domain.weights,
+        "weights_full": _full(domain).weights,
         "n_matches": len(domain.matches),
         "data_from": domain.matches[0].date.date(),
         "data_to": domain.matches[-1].date.date(),
@@ -337,7 +338,7 @@ def _fixture_rows(domain: _Domain, fixtures: list[tuple[str, str]], multipliers:
 def _predict_fixtures(
     domain: _Domain, fixtures: list[tuple[str, str]], multipliers: dict[str, float] | None = None
 ) -> list[Probs]:
-    probs = domain.model.predict(_fixture_rows(domain, fixtures, multipliers))
+    probs = _probs(domain, fixtures, multipliers)
     return [(float(p[0]), float(p[1]), float(p[2])) for p in probs]
 
 
@@ -352,6 +353,62 @@ def _goals_model(domain: _Domain) -> PoissonModel:
         return model
 
     return _cache.get_or_set(f"goals:{domain.spec.version}", fit)
+
+
+@dataclass
+class _Full:
+    model: object
+    weights: dict[str, float]  # criterion id -> share of influence, for all five criteria it uses
+
+
+def _full(domain: _Domain) -> _Full:
+    """The model that uses all five criteria (Poisson + head-to-head + Dixon–Coles).
+
+    For Poisson domains that is the domain's own model. Elo domains won their backtest with only two
+    criteria (strength and home advantage), so a user who changes attack, defence or head-to-head
+    there would change nothing: for them the full model is fitted on the same games and used only
+    when the criteria are customised (see _probs) — the default predictions keep the validated model.
+    """
+    if domain.spec.kind == "poisson":
+        return _Full(domain.model, domain.weights)
+
+    def fit() -> _Full:
+        model = PoissonModel(use_h2h=True, dixon_coles=True)
+        model.fit(domain.rows)
+        n = len(domain.rows.home_goals)
+        recent = domain.rows.subset(np.arange(max(0, n - 1000), n))
+        return _Full(model, criteria_weights(model, recent))
+
+    return _cache.get_or_set(f"full:{domain.spec.version}", fit)
+
+
+def _base_multipliers(domain: _Domain) -> dict[str, float]:
+    """Multipliers that make the full model weigh the criteria the way the validated model does
+    (the ones it doesn't use at 0), on the same scale as the user's: the largest is 1."""
+    full, valid = _full(domain).weights, domain.weights
+    ratios = {cid: valid.get(cid, 0.0) / max(full.get(cid, 0.0), 0.005) for cid in CRITERIA}
+    top = max(ratios.values(), default=0.0)
+    return {cid: r / top for cid, r in ratios.items()} if top > 0 else {}
+
+
+def _probs(domain: _Domain, fixtures: list[tuple[str, str]], multipliers: dict[str, float] | None, rows: Rows | None = None):
+    """1X2 probabilities of the fixtures, with the user's criteria applied.
+
+    Without customisation, or for Poisson domains (which use all five criteria), that is the domain's
+    own validated model. An Elo domain ignores some criteria, so the user's multipliers (which are
+    relative to the full model) are measured in the full model against its own validated-like set-up
+    (_base_multipliers), and only that difference is added to the validated model's probabilities.
+    So leaving everything as is gives exactly the default, a criterion left at 0% stays out, and a
+    small change gives a small move rather than a jump between two model families.
+    """
+    custom = rows if rows is not None else _fixture_rows(domain, fixtures, multipliers)
+    if not multipliers or domain.spec.kind == "poisson":
+        return domain.model.predict(custom)
+    full = _full(domain).model
+    base = _fixture_rows(domain, fixtures, _base_multipliers(domain))
+    probs = domain.model.predict(_fixture_rows(domain, fixtures, None)) + full.predict(custom) - full.predict(base)
+    probs = np.clip(probs, 1e-4, None)
+    return probs / probs.sum(axis=1, keepdims=True)
 
 
 @dataclass
@@ -388,7 +445,7 @@ def forecast_league(
 
     domain = _domain(spec)
     rows = _fixture_rows(domain, list(known.values()), multipliers)
-    probs = domain.model.predict(rows)
+    probs = _probs(domain, list(known.values()), multipliers, rows)
     grids = _goals_model(domain).score_grid(rows)
     model_markets = _goals_model(domain).goal_markets(rows)
     goals = np.arange(MAX_GOALS + 1)
