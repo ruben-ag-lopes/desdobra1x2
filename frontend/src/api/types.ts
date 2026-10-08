@@ -79,10 +79,15 @@ export type LegacyCriterionId = "forma" | "ranking_uefa" | "ultimos2" | "confron
 /** Direct share per legacy criterion (0-1). Missing = the model's own default. */
 export type LegacyWeights = Partial<Record<LegacyCriterionId, number>>;
 
+/** Whole-number percentages per criterion that always add up to 100 (what the user edits). */
+export type Shares = Partial<Record<CriterionId, number>>;
+
 /** Every user-editable criterion sent in a desdobramento request. */
 export interface Criteria {
   multiplicadores: Multipliers;
   pesosAntigos: LegacyWeights;
+  /** The shares the user typed, kept only to show them again; the server only sees `multiplicadores`. */
+  partilhas: Shares;
 }
 
 export interface Criterion {

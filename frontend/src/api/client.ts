@@ -52,7 +52,7 @@ export function postDesdobramento(
   matches: MatchInput[],
   n_apostas: number,
   draw?: { concurso: string; data_sorteio: string | null },
-  criteria: Criteria = { multiplicadores: {}, pesosAntigos: {} },
+  criteria: Criteria = { multiplicadores: {}, pesosAntigos: {}, partilhas: {} },
 ): Promise<DesdobramentoResponse> {
   return request("/api/totobola/desdobramento", {
     method: "POST",

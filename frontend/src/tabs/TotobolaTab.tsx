@@ -362,7 +362,6 @@ export function TotobolaTab({ game, title }: Props) {
                     >
                       <td>
                         {i + 1}. {p.home_team} vs {p.away_team}
-                        {p.low_confidence && <span className="low-confidence"> *</span>}
                       </td>
                       <td>{formatProb(p, "1", p.prob_home)}</td>
                       <td>{formatProb(p, "X", p.prob_draw)}</td>
@@ -376,12 +375,6 @@ export function TotobolaTab({ game, title }: Props) {
               </tbody>
             </table>
           </div>
-          {result.probabilities.some((p) => p.low_confidence) && (
-            <p className="hint">
-              <span className="low-confidence">*</span> Sem histórico destas equipas: estimativa pouco fiável.
-            </p>
-          )}
-
           {resumoDisponivel && (
             <div className="resumo-ia">
               <button onClick={handleExplicar} disabled={resumoLoading}>

@@ -18,14 +18,12 @@
 Num jogo Noruega - Portugal o modelo dá 33% / 28% / 38%. Se escolheres a **dupla 1X**, a probabilidade do 2 é repartida pelos outros dois: fica 54% para o 1 e 46% para o X. Se fixares o 2, todas as apostas têm 2 nesse jogo.
 
 ## O que pesa em cada previsão
-Carrega em **"Critérios e pesos"**. O pop-up mostra, para cada modelo usado, os critérios (força das equipas, fator casa, ataque, defesa e confronto direto) e o peso de cada um, mais a origem dos dados.
+Carrega em **"Critérios"**. O pop-up mostra, lado a lado, o peso **predefinido** de cada critério (força das equipas, fator casa, ataque, defesa e confronto direto) e uma coluna **personalizada**, e no fim a origem dos dados. **"Mais informações"** explica o que é cada critério.
 
 ### Personalizar os critérios
-No mesmo pop-up, cada critério tem um cursor de 0% a 100%:
-- **100%** é o modelo predefinido.
-- **0%** ignora o critério.
+Mexe nos cursores da coluna "Personalizado". A soma é **sempre 100%**: quando aumentas um critério, os outros baixam na mesma proporção.
 
-Carrega em **Aplicar e recalcular**. Enquanto tiveres alterações, a tabela mostra a etiqueta **"critérios personalizados"**. **"Repor predefinidos"** volta sempre ao modelo original. As tuas escolhas ficam guardadas neste navegador.
+Carrega em **Aplicar e recalcular**: o pop-up fecha, as previsões são recalculadas e a tabela mostra a etiqueta **"critérios personalizados"**. Quando voltares a abrir os critérios, vês os teus valores. **"Repor predefinidos"** volta sempre ao modelo original. As tuas escolhas ficam guardadas neste navegador.
 
 Os critérios alterados **não foram validados**: os predefinidos são os que tiveram o menor erro nos testes com jogos passados.
 

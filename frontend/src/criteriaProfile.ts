@@ -1,4 +1,4 @@
-import type { Criteria, CriterionId, LegacyCriterionId, LegacyWeights, Multipliers } from "./api/types";
+import type { Criteria, CriterionId, LegacyCriterionId, LegacyWeights, Multipliers, Shares } from "./api/types";
 
 const STORAGE_KEY = "desdobra1x2.criterios";
 export const MULTIPLIER_MAX = 1; // same limit as the backend (app/models.py): no amplifying beyond the default
@@ -15,7 +15,7 @@ export const LEGACY_DEFAULTS: Record<LegacyCriterionId, number> = {
 };
 
 export function emptyCriteria(): Criteria {
-  return { multiplicadores: {}, pesosAntigos: {} };
+  return { multiplicadores: {}, pesosAntigos: {}, partilhas: {} };
 }
 
 /** Only the criteria the user moved away from 100%: an empty object means "default model". */
@@ -51,14 +51,21 @@ export function loadCriteria(): Criteria {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
     if (!parsed || typeof parsed !== "object") return emptyCriteria();
-    const { multiplicadores, pesosAntigos } = parsed as Partial<Criteria>;
+    const { multiplicadores, pesosAntigos, partilhas } = parsed as Partial<Criteria>;
     const validMult = Object.entries(multiplicadores ?? {}).filter(
       ([, m]) => typeof m === "number" && m >= 0 && m <= MULTIPLIER_MAX,
     ) as [CriterionId, number][];
     const validLegacy = Object.entries(pesosAntigos ?? {}).filter(
       ([, w]) => typeof w === "number" && w >= 0 && w <= LEGACY_SHARE_MAX,
     ) as [LegacyCriterionId, number][];
-    return { multiplicadores: Object.fromEntries(validMult), pesosAntigos: Object.fromEntries(validLegacy) };
+    const validShares = Object.entries(partilhas ?? {}).filter(
+      ([, v]) => typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 100,
+    ) as [CriterionId, number][];
+    return {
+      multiplicadores: Object.fromEntries(validMult),
+      pesosAntigos: Object.fromEntries(validLegacy),
+      partilhas: Object.fromEntries(validShares) as Shares,
+    };
   } catch {
     return emptyCriteria();
   }
@@ -68,7 +75,11 @@ export function saveCriteria(c: Criteria): void {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ multiplicadores: customOnly(c.multiplicadores), pesosAntigos: legacyCustomOnly(c.pesosAntigos) }),
+      JSON.stringify({
+        multiplicadores: customOnly(c.multiplicadores),
+        pesosAntigos: legacyCustomOnly(c.pesosAntigos),
+        partilhas: c.partilhas,
+      }),
     );
   } catch {
     // storage blocked (private window): the choice still applies until the page is closed

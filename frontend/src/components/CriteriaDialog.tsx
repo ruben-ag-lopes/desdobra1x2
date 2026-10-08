@@ -1,82 +1,106 @@
 import { useRef, useState } from "react";
 import { getCriterios } from "../api/client";
-import type { Criteria, CriterionId, LegacyCriterionId, ModelCriteria } from "../api/types";
+import type { Criteria, CriterionId, ModelCriteria, Shares } from "../api/types";
+import { customOnly, emptyCriteria, isCriteriaCustom } from "../criteriaProfile";
 import {
-  customOnly,
-  emptyCriteria,
-  isCriteriaCustom,
-  LEGACY_SHARE_MAX,
-  legacyCustomOnly,
-  legacySum,
-  MULTIPLIER_MAX,
-} from "../criteriaProfile";
+  defaultShares,
+  sameShares,
+  setShare,
+  sharesFromMultipliers,
+  sharesToMultipliers,
+  TRAINED_IDS,
+} from "../shares";
 
 interface Props {
   /** Model ids used in the current result, with the (1-based) numbers of the games each one predicted. */
   usage: Map<string, number[]>;
   hasDouble: boolean;
-  /** The user's criteria; together with onApply, shows the editor. */
+  /** The user's criteria; together with onApply, shows the personalisable column. */
   criteria?: Criteria;
-  /** Called with the user's criteria when they press "Aplicar e recalcular". */
+  /** Called with the user's criteria when they apply or reset; the caller recalculates. */
   onApply?: (criteria: Criteria) => void;
 }
 
-const TRAINED_IDS = new Set<string>(["elo", "casa", "ataque", "defesa", "h2h"]);
-const LEGACY_IDS = new Set<string>(["forma", "ranking_uefa", "ultimos2", "confronto_direto", "classificacao"]);
+const LABEL: Record<CriterionId, string> = {
+  elo: "Força das equipas (Elo)",
+  casa: "Fator casa",
+  ataque: "Ataque recente",
+  defesa: "Defesa recente",
+  h2h: "Confronto direto",
+};
 
-function formatGames(numbers: number[]): string {
-  return numbers.length === 1 ? `jogo ${numbers[0]}` : `jogos ${numbers.join(", ")}`;
-}
+const INFO: Record<CriterionId, string> = {
+  elo: "Pontuação que mede a força de cada equipa e se atualiza depois de cada jogo (ganhar a um adversário forte vale mais). A diferença entre as duas equipas é, em regra, o fator mais importante da previsão.",
+  casa: "A vantagem de jogar em casa: as equipas costumam marcar mais e perder menos no seu estádio.",
+  ataque: "Golos marcados por cada equipa nos últimos 8 jogos.",
+  defesa: "Golos sofridos por cada equipa nos últimos 8 jogos. Quantos menos, mais forte a defesa.",
+  h2h: "Resultados dos últimos 5 jogos entre as duas equipas.",
+};
 
-/** Criteria the user can scale, restricted to one id set, once each, most influential first. */
-function pickEditable(models: ModelCriteria[], ids: Set<string>): { id: string; nome: string }[] {
-  const best = new Map<string, { nome: string; peso: number }>();
-  for (const c of models.flatMap((m) => m.criterios)) {
-    if (!c.id || !ids.has(c.id)) continue;
-    const peso = c.peso ?? 0;
-    if (peso > (best.get(c.id)?.peso ?? -1)) best.set(c.id, { nome: c.nome, peso });
+const WEIGHT_NOTE = "O peso de cada critério é a parte da variação das probabilidades que se deve a ele, medida nos jogos mais recentes.";
+
+/** What the dialog shows when opened: the user's saved shares, else the predefined ones. */
+function initialDraft(criteria: Criteria, defaults: Shares): Shares {
+  const ids = Object.keys(defaults);
+  const saved = criteria.partilhas;
+  const savedIds = Object.keys(saved);
+  const total = Object.values(saved).reduce((a, b) => a + (b ?? 0), 0);
+  if (savedIds.length === ids.length && savedIds.every((i) => ids.includes(i)) && total === 100) return saved;
+  if (Object.keys(customOnly(criteria.multiplicadores)).length > 0) {
+    return sharesFromMultipliers(criteria.multiplicadores, defaults);
   }
-  return [...best.entries()].sort((a, b) => b[1].peso - a[1].peso).map(([id, { nome }]) => ({ id, nome }));
-}
-
-function multiplierLabel(m: number): string {
-  if (m === 0) return "ignorado";
-  if (m === 1) return "100% (predefinido)";
-  return `${Math.round(m * 100)}%`;
+  return defaults;
 }
 
 export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [models, setModels] = useState<ModelCriteria[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Criteria>(criteria ?? emptyCriteria());
+  const [draft, setDraft] = useState<Shares>({});
+  const [showInfo, setShowInfo] = useState(false);
+
+  const current = criteria ?? emptyCriteria();
+  const trained = (models ?? []).filter((m) => m.criterios.some((c) => c.id && TRAINED_IDS.has(c.id)));
+  const defaults = defaultShares(trained, usage);
+  const rows = Object.keys(defaults) as CriterionId[];
+  const applied = initialDraft(current, defaults);
+  const changed = !sameShares(draft, applied);
+  const canReset = isCriteriaCustom(current) || !sameShares(draft, defaults);
 
   function open() {
     dialogRef.current?.showModal();
     setModels(null);
     setError(null);
-    setDraft(criteria ?? emptyCriteria());
+    setShowInfo(false);
     getCriterios([...usage.keys()])
-      .then(setModels)
+      .then((list) => {
+        const used = list.filter((m) => m.criterios.some((c) => c.id && TRAINED_IDS.has(c.id)));
+        setDraft(initialDraft(current, defaultShares(used, usage)));
+        setModels(list);
+      })
       .catch((e) => setError(String(e)));
   }
 
-  function apply(next: Criteria) {
-    onApply?.({ multiplicadores: customOnly(next.multiplicadores), pesosAntigos: legacyCustomOnly(next.pesosAntigos) });
+  function apply(next: Shares | null) {
+    const multiplicadores = next ? sharesToMultipliers(next, defaults) : {};
+    const custom = Object.keys(multiplicadores).length > 0;
+    // Keep any customisation of criteria this boletim doesn't show; reset clears everything.
+    const untouched = next ? Object.fromEntries(Object.entries(current.multiplicadores).filter(([id]) => !rows.includes(id as CriterionId))) : {};
+    onApply?.({
+      multiplicadores: { ...untouched, ...multiplicadores },
+      pesosAntigos: next ? current.pesosAntigos : {},
+      partilhas: next && custom ? next : {},
+    });
     dialogRef.current?.close();
   }
 
-  const editableTrained = models && onApply ? pickEditable(models, TRAINED_IDS) : [];
-  const editableLegacy = models && onApply ? pickEditable(models, LEGACY_IDS) : [];
-  const currentCriteria = criteria ?? emptyCriteria();
-  const changed = JSON.stringify(draft) !== JSON.stringify(currentCriteria);
-  const legacyTotal = legacySum(draft.pesosAntigos);
-  const legacyOverLimit = legacyTotal > 1 + 1e-9;
+  // One line per distinct data source (the text already names the league).
+  const sources = [...new Set(trained.map((m) => m.dados).filter(Boolean))];
 
   return (
     <>
       <button className="link-button" onClick={open}>
-        ⓘ Critérios e pesos{isCriteriaCustom(currentCriteria) && " (personalizados)"}
+        ⓘ Critérios{isCriteriaCustom(current) && " (personalizados)"}
       </button>
       <dialog
         ref={dialogRef}
@@ -84,7 +108,7 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
         onClick={(e) => e.target === dialogRef.current && dialogRef.current?.close()}
       >
         <header>
-          <h3>Como são calculadas as probabilidades</h3>
+          <h3>Critérios das previsões</h3>
           <button aria-label="Fechar" onClick={() => dialogRef.current?.close()}>
             ✕
           </button>
@@ -92,149 +116,85 @@ export function CriteriaDialog({ usage, hasDouble, criteria, onApply }: Props) {
 
         {error && <p className="error">{error}</p>}
         {!models && !error && <p className="hint">A carregar...</p>}
+        {models && rows.length === 0 && <p className="hint">Estas previsões não usam critérios personalizáveis.</p>}
 
-        {editableTrained.length > 0 && (
-          <section className="criteria-editor">
-            <h4>Os teus critérios</h4>
-            <p className="hint">
-              Dá menos importância a um critério, entre 100% (modelo predefinido) e 0% (critério ignorado). Aplica-se
-              aos jogos com modelo treinado.
-            </p>
-            <datalist id="criteria-default-tick">
-              <option value={100} />
-            </datalist>
-            {editableTrained.map(({ id, nome }) => {
-              const value = draft.multiplicadores[id as CriterionId] ?? 1;
-              return (
-                <div key={id} className="criterion-slider">
-                  <label htmlFor={`mult-${id}`}>{nome}</label>
-                  <input
-                    id={`mult-${id}`}
-                    type="range"
-                    min={0}
-                    max={MULTIPLIER_MAX * 100}
-                    step={10}
-                    list="criteria-default-tick"
-                    value={Math.round(value * 100)}
-                    aria-valuetext={multiplierLabel(value)}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        multiplicadores: { ...draft.multiplicadores, [id]: Number(e.target.value) / 100 },
-                      })
-                    }
-                  />
-                  <output htmlFor={`mult-${id}`} className={value === 1 ? "hint" : ""}>
-                    {multiplierLabel(value)}
-                  </output>
-                </div>
-              );
-            })}
-          </section>
-        )}
-
-        {editableLegacy.length > 0 && (
-          <section className="criteria-editor">
-            <h4>Critérios do modelo antigo (sem histórico das equipas)</h4>
-            <p className="hint">
-              Estes 5 pesos são uma partilha de 100%: a soma não pode ultrapassar 100% e nenhum pode sozinho
-              ultrapassar 100%. Só afeta jogos sem modelo treinado.
-            </p>
-            {editableLegacy.map(({ id, nome }) => {
-              const value = draft.pesosAntigos[id as LegacyCriterionId] ?? 0;
-              return (
-                <div key={id} className="criterion-slider">
-                  <label htmlFor={`legado-${id}`}>{nome}</label>
-                  <input
-                    id={`legado-${id}`}
-                    type="range"
-                    min={0}
-                    max={LEGACY_SHARE_MAX * 100}
-                    step={5}
-                    value={Math.round(value * 100)}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        pesosAntigos: { ...draft.pesosAntigos, [id]: Number(e.target.value) / 100 },
-                      })
-                    }
-                  />
-                  <output htmlFor={`legado-${id}`}>{Math.round(value * 100)}%</output>
-                </div>
-              );
-            })}
-            <p className={legacyOverLimit ? "criteria-warning" : "hint"} role={legacyOverLimit ? "alert" : undefined}>
-              Total: {Math.round(legacyTotal * 100)}%{legacyOverLimit && " — não pode ultrapassar 100%"}
-            </p>
-          </section>
-        )}
-
-        {(editableTrained.length > 0 || editableLegacy.length > 0) && (
+        {models && rows.length > 0 && (
           <>
-            {isCriteriaCustom(draft) && (
-              <p className="criteria-warning" role="note">
-                Critérios alterados não foram validados. Os predefinidos são os que tiveram o menor erro nos testes
-                com jogos passados.
-              </p>
-            )}
-            <div className="controls">
-              <button onClick={() => apply(draft)} disabled={!changed || legacyOverLimit}>
-                Aplicar e recalcular
-              </button>
-              <button
-                onClick={() => apply(emptyCriteria())}
-                disabled={!isCriteriaCustom(draft) && !isCriteriaCustom(currentCriteria)}
-              >
-                Repor predefinidos
-              </button>
-            </div>
-          </>
-        )}
-
-        {models?.map((m) => (
-          <section key={m.modelo}>
-            <h4>
-              {m.titulo} <span className="hint">({formatGames(usage.get(m.modelo) ?? [])})</span>
-            </h4>
-            <p>{m.descricao}</p>
-            <ul className="criteria-list">
-              {m.criterios.map((c) => (
-                <li key={c.nome}>
-                  <div className="criterion-head">
-                    <span>{c.nome}</span>
-                    {c.peso !== null && <strong>{Math.round(c.peso * 100)}%</strong>}
-                  </div>
-                  {c.peso !== null && (
-                    <div className="weight-bar" aria-hidden="true">
-                      <span style={{ width: `${c.peso * 100}%` }} />
+            <div className="criteria-grid">
+              <div className="criteria-grid-row head">
+                <span>Critério</span>
+                <span>Predefinido</span>
+                <span>{onApply ? "Personalizado" : ""}</span>
+              </div>
+              {rows.map((id) => (
+                <div className="criteria-grid-row" key={id}>
+                  <label htmlFor={`share-${id}`}>{LABEL[id]}</label>
+                  <span className="default-share">{defaults[id]}%</span>
+                  {onApply && (
+                    <div className="custom-share">
+                      <input
+                        id={`share-${id}`}
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={draft[id] ?? 0}
+                        disabled={rows.length < 2}
+                        onChange={(e) => setDraft(setShare(draft, id, Number(e.target.value)))}
+                      />
+                      <output htmlFor={`share-${id}`}>{draft[id] ?? 0}%</output>
                     </div>
                   )}
-                  {c.detalhe && <p className="hint">{c.detalhe}</p>}
-                </li>
+                </div>
               ))}
-            </ul>
-            {m.notas.map((n) => (
-              <p key={n} className="hint">
-                {n}
-              </p>
-            ))}
-            {m.dados && <p className="hint">Dados: {m.dados}</p>}
-          </section>
-        ))}
+              <div className="criteria-grid-row total">
+                <span>Total</span>
+                <span>100%</span>
+                <span>{onApply ? "100%" : ""}</span>
+              </div>
+            </div>
 
-        {models && isCriteriaCustom(currentCriteria) && (
-          <p className="hint">Os pesos acima são os do modelo predefinido, antes das tuas alterações.</p>
-        )}
+            {onApply && (
+              <div className="controls">
+                <button onClick={() => apply(draft)} disabled={!changed}>
+                  Aplicar e recalcular
+                </button>
+                <button onClick={() => apply(null)} disabled={!canReset}>
+                  Repor predefinidos
+                </button>
+                <button className="link-button" aria-expanded={showInfo} onClick={() => setShowInfo((v) => !v)}>
+                  ⓘ Mais informações
+                </button>
+              </div>
+            )}
 
-        {hasDouble && (
-          <section>
-            <h4>Duplas</h4>
-            <p>
-              Nos jogos com dois resultados escolhidos, o modelo calcula 1, X e 2 normalmente e depois reparte a
-              probabilidade do resultado excluído pelos dois escolhidos, na proporção de cada um. Exemplo: 33% / 28% /
-              38% com dupla 1X fica 54% / 46%.
-            </p>
-          </section>
+            {showInfo && (
+              <dl className="criteria-info">
+                {rows.map((id) => (
+                  <div key={id}>
+                    <dt>{LABEL[id]}</dt>
+                    <dd>{INFO[id]}</dd>
+                  </div>
+                ))}
+                {hasDouble && (
+                  <div>
+                    <dt>Duplas</dt>
+                    <dd>
+                      Nos jogos com dois resultados escolhidos, a probabilidade do resultado excluído é repartida pelos
+                      dois escolhidos, na proporção de cada um.
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            )}
+
+            <footer className="criteria-footer">
+              {sources.map((dados) => (
+                <p key={dados}>Dados: {dados}</p>
+              ))}
+              <p>{WEIGHT_NOTE}</p>
+            </footer>
+          </>
         )}
       </dialog>
     </>
