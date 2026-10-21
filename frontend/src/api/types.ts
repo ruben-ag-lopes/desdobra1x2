@@ -164,6 +164,17 @@ export interface TotobolaResultado {
   resultado: "1" | "X" | "2";
 }
 
+export interface ConferirResponse {
+  concurso: string;
+  data_sorteio: string;
+  tabela_disponivel: boolean; // false while the Santa Casa hasn't published the prize table yet
+  numeros: number[];
+  numeros_extra: number[];
+  acertos: number[];
+  acertos_extra: number[];
+  premio: PrizeTier | null;
+}
+
 export interface UltimoConcursoTotobola {
   game: string;
   concurso: string;

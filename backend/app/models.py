@@ -189,6 +189,21 @@ class LotteryGenerateResponse(BaseModel):
     tickets: list[LotteryTicket]
 
 
+class ConferirRequest(BaseModel):
+    aposta: str = Field(min_length=1, max_length=100)  # "3 4 6 7 8 + 1", as the site writes a key
+
+
+class ConferirResponse(BaseModel):
+    concurso: str
+    data_sorteio: date
+    tabela_disponivel: bool  # False while the Santa Casa hasn't published the prize table yet
+    numeros: list[int]
+    numeros_extra: list[int]
+    acertos: list[int]
+    acertos_extra: list[int]
+    premio: PrizeTier | None = None  # None = no prize (or the table isn't out yet, see above)
+
+
 class Criterion(BaseModel):
     nome: str
     # Set when the user can scale this criterion: a `multiplicadores` id (trained models) or a

@@ -8,7 +8,7 @@ Ferramenta de **análise e geração de apostas** para os jogos da Santa Casa: T
 - **Totobola e Totobola Extra:** carrega os 13 jogos do concurso, calcula as probabilidades de 1, X e 2, deixa-te fixar resultados ou fazer duplas e gera o desdobramento das apostas.
 - **Futebol:** próximos jogos de mais de 20 ligas, com as nossas probabilidades, as das casas de apostas como referência, golos esperados e um boletim.
 - **Critérios editáveis:** vês o que pesa em cada previsão e podes dar mais ou menos importância a cada critério. Os predefinidos ficam sempre à mão.
-- **Totoloto, Euromilhões e EuroDreams:** chaves geradas ao acaso dentro das regras de cada jogo.
+- **Totoloto, Euromilhões e EuroDreams:** chaves geradas ao acaso dentro das regras de cada jogo, e conferência da tua aposta com o último sorteio (cola a aposta, ex.: `3 4 6 7 8 + 1`, e vês se ganhaste e em que prémio).
 
 ## Documentação
 - [Tutorial](docs/tutorial.md): como usar, passo a passo.
