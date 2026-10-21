@@ -1,5 +1,6 @@
 import type {
   Competition,
+  ConferirResponse,
   Criteria,
   DesdobramentoResponse,
   Draw,
@@ -104,6 +105,16 @@ export function generateLotteryTickets(
   return request(`/api/lotteries/${game}/generate`, {
     method: "POST",
     body: JSON.stringify({ count }),
+  });
+}
+
+export function conferirAposta(
+  game: "totoloto" | "euromilhoes" | "eurodreams",
+  aposta: string,
+): Promise<ConferirResponse> {
+  return request(`/api/lotteries/${game}/conferir`, {
+    method: "POST",
+    body: JSON.stringify({ aposta }),
   });
 }
 

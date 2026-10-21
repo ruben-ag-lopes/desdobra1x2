@@ -1,9 +1,17 @@
 from fastapi import APIRouter, HTTPException, Response
 
 from app.cache import cdn_cache
-from app.models import Draw, FrequenciaResponse, LotteryGenerateRequest, LotteryGenerateResponse, UltimoSorteio
+from app.models import (
+    ConferirRequest,
+    ConferirResponse,
+    Draw,
+    FrequenciaResponse,
+    LotteryGenerateRequest,
+    LotteryGenerateResponse,
+    UltimoSorteio,
+)
 from app.scrapers import santacasa_calendar, santacasa_results
-from app.services import lottery_generator
+from app.services import conferencia, lottery_generator
 
 router = APIRouter(prefix="/api/lotteries", tags=["lotteries"])
 
@@ -55,3 +63,18 @@ def generate(game: str, req: LotteryGenerateRequest):
 
     tickets = lottery_generator.generate_tickets(game, req.count)
     return LotteryGenerateResponse(tickets=tickets)
+
+
+@router.post("/{game}/conferir", response_model=ConferirResponse)
+def conferir(game: str, req: ConferirRequest):
+    if game not in VALID_GAMES:
+        raise HTTPException(status_code=404, detail=f"Unknown lottery game: {game}")
+    try:
+        numeros, numeros_extra = conferencia.parse_aposta(game, req.aposta)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    try:
+        sorteio = santacasa_results.get_ultimo_sorteio(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
+    return conferencia.conferir(game, sorteio, numeros, numeros_extra)

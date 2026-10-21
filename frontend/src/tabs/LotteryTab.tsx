@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { generateLotteryTickets, getFrequencia, getLotteryDraw, getUltimoSorteio } from "../api/client";
 import type { Draw, FrequenciaResponse, LotteryTicket, UltimoSorteio } from "../api/types";
 import { CopyButton } from "../components/CopyButton";
+import { ConferirAposta } from "../components/ConferirAposta";
 import { DrawInfo } from "../components/DrawInfo";
 
 interface Props {
@@ -171,6 +172,7 @@ export function LotteryTab({ game, title, extraLabel }: Props) {
 
       {sorteioError && <p className="hint">Não foi possível obter o último sorteio ({sorteioError}).</p>}
       {sorteio && <UltimoSorteioCard sorteio={sorteio} />}
+      <ConferirAposta game={game} />
       {frequencia && <FrequenciaCard frequencia={frequencia} />}
     </div>
   );
