@@ -276,3 +276,36 @@ class SuggestionRequest(BaseModel):
         if not value.strip():
             raise ValueError("mensagem must not be blank")
         return value.strip()
+
+
+class BilhetePremio(BaseModel):
+    """A ticket-number prize of Lotaria Clássica/Popular: the ticket and its values as the Santa Casa lists them."""
+
+    nome: str  # "1.º Prémio"
+    bilhete: str  # "10138"
+    valores: list[str]  # Clássica: total, fração · Popular: fração sorteada, restantes frações
+
+
+class UltimoBilhete(BaseModel):
+    game: str
+    concurso: str
+    data_sorteio: date
+    premios: list[BilhetePremio]
+    sequencias_digitos: int  # 4 for Lotaria Clássica, 2 for Lotaria Popular
+    sequencias: list[str]  # win when the ticket ends with one of them
+
+
+class ConferirBilheteRequest(BaseModel):
+    bilhete: str = Field(min_length=1, max_length=20)
+
+
+class ConferirBilheteResponse(BaseModel):
+    concurso: str
+    data_sorteio: date
+    bilhete: str
+    premio: BilhetePremio | None = None  # the ticket matches a prize exactly
+    sequencia: str | None = None  # the ticket ends with this sequence (only if no exact prize)
+
+
+class SugestaoBilheteResponse(BaseModel):
+    bilhete: str

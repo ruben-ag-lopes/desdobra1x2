@@ -198,3 +198,26 @@ export interface FrequenciaResponse {
   n_sorteios: number;
   numeros: NumberFrequency[];
 }
+
+export interface BilhetePremio {
+  nome: string;
+  bilhete: string;
+  valores: string[]; // Clássica: total, fração · Popular: fração sorteada, restantes frações
+}
+
+export interface UltimoBilhete {
+  game: string;
+  concurso: string;
+  data_sorteio: string;
+  premios: BilhetePremio[];
+  sequencias_digitos: number;
+  sequencias: string[];
+}
+
+export interface ConferirBilheteResponse {
+  concurso: string;
+  data_sorteio: string;
+  bilhete: string;
+  premio: BilhetePremio | null;
+  sequencia: string | null;
+}

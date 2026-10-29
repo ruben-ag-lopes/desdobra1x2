@@ -2,16 +2,20 @@ from fastapi import APIRouter, HTTPException, Response
 
 from app.cache import cdn_cache
 from app.models import (
+    ConferirBilheteRequest,
+    ConferirBilheteResponse,
     ConferirRequest,
     ConferirResponse,
     Draw,
     FrequenciaResponse,
     LotteryGenerateRequest,
     LotteryGenerateResponse,
+    SugestaoBilheteResponse,
+    UltimoBilhete,
     UltimoSorteio,
 )
 from app.scrapers import santacasa_calendar, santacasa_results
-from app.services import conferencia, lottery_generator
+from app.services import bilhete, conferencia, lottery_generator
 
 router = APIRouter(prefix="/api/lotteries", tags=["lotteries"])
 
@@ -78,3 +82,39 @@ def conferir(game: str, req: ConferirRequest):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
     return conferencia.conferir(game, sorteio, numeros, numeros_extra)
+
+
+def _check_bilhete_game(game: str) -> None:
+    if game not in bilhete.BILHETE_GAMES:
+        raise HTTPException(status_code=404, detail=f"Unknown ticket game: {game}")
+
+
+@router.get("/{game}/ultimo-bilhete", response_model=UltimoBilhete)
+def get_ultimo_bilhete(game: str, response: Response):
+    _check_bilhete_game(game)
+    try:
+        result = santacasa_results.get_ultimo_bilhete(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
+    cdn_cache(response, 12 * 3600)
+    return result
+
+
+@router.post("/{game}/conferir-bilhete", response_model=ConferirBilheteResponse)
+def conferir_bilhete(game: str, req: ConferirBilheteRequest):
+    _check_bilhete_game(game)
+    try:
+        numero = bilhete.parse_bilhete(req.bilhete)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    try:
+        sorteio = santacasa_results.get_ultimo_bilhete(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
+    return bilhete.conferir_bilhete(sorteio, numero)
+
+
+@router.post("/{game}/sugerir-bilhete", response_model=SugestaoBilheteResponse)
+def sugerir_bilhete(game: str):
+    _check_bilhete_game(game)
+    return bilhete.sugerir_bilhete()

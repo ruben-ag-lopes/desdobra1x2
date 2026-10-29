@@ -16,7 +16,16 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.cache import TTLCache
-from app.models import FrequenciaResponse, NumberFrequency, PrizeTier, TotobolaResultado, UltimoConcursoTotobola, UltimoSorteio
+from app.models import (
+    BilhetePremio,
+    FrequenciaResponse,
+    NumberFrequency,
+    PrizeTier,
+    TotobolaResultado,
+    UltimoBilhete,
+    UltimoConcursoTotobola,
+    UltimoSorteio,
+)
 
 _cache = TTLCache(ttl_seconds=24 * 3600)
 
@@ -28,6 +37,10 @@ _RESULT_URLS = {
 _TOTOBOLA_RESULT_URLS = {
     "totobola": "https://www.jogossantacasa.pt/web/SCCartazResult/bolaNormal",
     "totobola_extra": "https://www.jogossantacasa.pt/web/SCCartazResult/bolaExtra1",
+}
+_BILHETE_URLS = {
+    "lotaria_classica": "https://www.jogossantacasa.pt/web/SCCartazResult/lotClass",
+    "lotaria_popular": "https://www.jogossantacasa.pt/web/SCCartazResult/lotPop",
 }
 # Highest possible main number, so numbers absent from the sample still show up (0 saídas).
 _MAX_NUMBER = {"totoloto": 49, "euromilhoes": 50, "eurodreams": 40}
@@ -129,6 +142,31 @@ def _fetch_ultimo_concurso_totobola(game: str) -> UltimoConcursoTotobola:
     )
 
 
+def _fetch_ultimo_bilhete(game: str) -> UltimoBilhete:
+    soup = _soup(_BILHETE_URLS[game])
+    concurso, data_sorteio = _draw_info(soup)
+
+    premios = []
+    for row in soup.select("div.stripped.betMiddle ul[class*='colum']"):
+        cells = [li.get_text(strip=True) for li in row.select("li")]
+        if len(cells) == 4:
+            premios.append(BilhetePremio(nome=cells[0], bilhete=cells[1], valores=cells[2:]))
+    if not premios:
+        raise ValueError(f"Could not find the ticket prizes for {game}")
+
+    # The sequences block sits under a header like "Sequências de 4 algarismos".
+    header = next((d for d in soup.select("div.betHeader") if re.search(r"de \d+ algarismos", d.get_text(" "))), None)
+    if header is None:
+        raise ValueError(f"Could not find the sequences for {game}")
+    digitos = int(re.search(r"de (\d+)", header.get_text(" ")).group(1))
+    body = header.find_next_sibling("div", class_="betMiddle")
+    sequencias = re.findall(r"\d+", body.get_text(" ")) if body else []
+
+    return UltimoBilhete(
+        game=game, concurso=concurso, data_sorteio=data_sorteio, premios=premios, sequencias_digitos=digitos, sequencias=sequencias
+    )
+
+
 def _fetch_frequencia(game: str) -> FrequenciaResponse:
     """Number frequency over the recent draws the site's own dropdown lists (see module docstring)."""
     front_page = _soup(_RESULT_URLS[game])
@@ -176,3 +214,7 @@ def get_ultimo_concurso_totobola(game: str) -> UltimoConcursoTotobola:
 
 def get_frequencia(game: str) -> FrequenciaResponse:
     return _cache.get_or_set(f"frequencia:{game}", lambda: _fetch_frequencia(game))
+
+
+def get_ultimo_bilhete(game: str) -> UltimoBilhete:
+    return _cache.get_or_set(f"ultimo_bilhete:{game}", lambda: _fetch_ultimo_bilhete(game))

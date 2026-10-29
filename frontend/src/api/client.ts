@@ -1,5 +1,6 @@
 import type {
   Competition,
+  ConferirBilheteResponse,
   ConferirResponse,
   Criteria,
   DesdobramentoResponse,
@@ -13,6 +14,7 @@ import type {
   Multipliers,
   ResultProbabilities,
   ResumoResponse,
+  UltimoBilhete,
   UltimoConcursoTotobola,
   UltimoSorteio,
 } from "./types";
@@ -116,6 +118,23 @@ export function conferirAposta(
     method: "POST",
     body: JSON.stringify({ aposta }),
   });
+}
+
+export type TicketGame = "lotaria_classica" | "lotaria_popular";
+
+export function getUltimoBilhete(game: TicketGame): Promise<UltimoBilhete> {
+  return request(`/api/lotteries/${game}/ultimo-bilhete`);
+}
+
+export function conferirBilhete(game: TicketGame, bilhete: string): Promise<ConferirBilheteResponse> {
+  return request(`/api/lotteries/${game}/conferir-bilhete`, {
+    method: "POST",
+    body: JSON.stringify({ bilhete }),
+  });
+}
+
+export function sugerirBilhete(game: TicketGame): Promise<{ bilhete: string }> {
+  return request(`/api/lotteries/${game}/sugerir-bilhete`, { method: "POST" });
 }
 
 export function getCompeticoes(): Promise<Competition[]> {
