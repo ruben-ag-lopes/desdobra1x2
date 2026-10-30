@@ -1,6 +1,7 @@
 import type {
   Competition,
   ConferirBilheteResponse,
+  ConferirCodigoResponse,
   ConferirResponse,
   Criteria,
   DesdobramentoResponse,
@@ -15,6 +16,7 @@ import type {
   ResultProbabilities,
   ResumoResponse,
   UltimoBilhete,
+  UltimoCodigo,
   UltimoConcursoTotobola,
   UltimoSorteio,
 } from "./types";
@@ -135,6 +137,23 @@ export function conferirBilhete(game: TicketGame, bilhete: string): Promise<Conf
 
 export function sugerirBilhete(game: TicketGame): Promise<{ bilhete: string }> {
   return request(`/api/lotteries/${game}/sugerir-bilhete`, { method: "POST" });
+}
+
+export type CodeGame = "m1lhao" | "chuva_milionarios";
+
+export function getUltimoCodigo(game: CodeGame): Promise<UltimoCodigo> {
+  return request(`/api/lotteries/${game}/ultimo-codigo`);
+}
+
+export function conferirCodigo(game: CodeGame, codigo: string): Promise<ConferirCodigoResponse> {
+  return request(`/api/lotteries/${game}/conferir-codigo`, {
+    method: "POST",
+    body: JSON.stringify({ codigo }),
+  });
+}
+
+export function sugerirCodigo(game: CodeGame): Promise<{ codigo: string }> {
+  return request(`/api/lotteries/${game}/sugerir-codigo`, { method: "POST" });
 }
 
 export function getCompeticoes(): Promise<Competition[]> {

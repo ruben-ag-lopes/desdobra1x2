@@ -3,6 +3,10 @@ from fastapi import APIRouter, HTTPException, Response
 from app.cache import cdn_cache
 from app.models import (
     ConferirBilheteRequest,
+    ConferirCodigoRequest,
+    ConferirCodigoResponse,
+    SugestaoCodigoResponse,
+    UltimoCodigo,
     ConferirBilheteResponse,
     ConferirRequest,
     ConferirResponse,
@@ -15,7 +19,7 @@ from app.models import (
     UltimoSorteio,
 )
 from app.scrapers import santacasa_calendar, santacasa_results
-from app.services import bilhete, conferencia, lottery_generator
+from app.services import bilhete, codigo, conferencia, lottery_generator
 
 router = APIRouter(prefix="/api/lotteries", tags=["lotteries"])
 
@@ -118,3 +122,39 @@ def conferir_bilhete(game: str, req: ConferirBilheteRequest):
 def sugerir_bilhete(game: str):
     _check_bilhete_game(game)
     return bilhete.sugerir_bilhete()
+
+
+def _check_codigo_game(game: str) -> None:
+    if game not in codigo.CODIGO_GAMES:
+        raise HTTPException(status_code=404, detail=f"Unknown code game: {game}")
+
+
+@router.get("/{game}/ultimo-codigo", response_model=UltimoCodigo)
+def get_ultimo_codigo(game: str, response: Response):
+    _check_codigo_game(game)
+    try:
+        result = santacasa_results.get_ultimo_codigo(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
+    cdn_cache(response, 12 * 3600)
+    return result
+
+
+@router.post("/{game}/conferir-codigo", response_model=ConferirCodigoResponse)
+def conferir_codigo(game: str, req: ConferirCodigoRequest):
+    _check_codigo_game(game)
+    try:
+        valor = codigo.parse_codigo(req.codigo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    try:
+        sorteio = santacasa_results.get_ultimo_codigo(game)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch {game}'s last draw: {e}") from e
+    return codigo.conferir_codigo(sorteio, valor)
+
+
+@router.post("/{game}/sugerir-codigo", response_model=SugestaoCodigoResponse)
+def sugerir_codigo(game: str):
+    _check_codigo_game(game)
+    return codigo.sugerir_codigo()

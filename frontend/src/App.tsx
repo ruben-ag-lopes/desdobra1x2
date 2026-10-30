@@ -6,6 +6,7 @@ import logo from "./assets/logo.png";
 import { SupportFooter } from "./components/SupportFooter";
 import { FutebolTab } from "./tabs/FutebolTab";
 import { BilheteTab } from "./tabs/BilheteTab";
+import { CodigoTab } from "./tabs/CodigoTab";
 import { LotteryTab } from "./tabs/LotteryTab";
 import { SportTab } from "./tabs/SportTab";
 import { TotobolaTab } from "./tabs/TotobolaTab";
@@ -18,6 +19,8 @@ const SANTA_CASA_GAMES = [
   { id: "eurodreams", label: "EuroDreams" },
   { id: "lotaria_classica", label: "Lotaria Clássica" },
   { id: "lotaria_popular", label: "Lotaria Popular" },
+  { id: "m1lhao", label: "M1lhão" },
+  { id: "chuva_milionarios", label: "Chuva de Milionários" },
 ] as const;
 
 const OTHER_SPORTS = [
@@ -121,6 +124,8 @@ function App() {
         {active === "eurodreams" && <LotteryTab game="eurodreams" title="EuroDreams" extraLabel="Dream number" />}
         {active === "lotaria_classica" && <BilheteTab game="lotaria_classica" title="Lotaria Clássica" />}
         {active === "lotaria_popular" && <BilheteTab game="lotaria_popular" title="Lotaria Popular" />}
+        {active === "m1lhao" && <CodigoTab game="m1lhao" title="M1lhão" />}
+        {active === "chuva_milionarios" && <CodigoTab game="chuva_milionarios" title="Chuva de Milionários" />}
       </main>
 
       <SupportFooter />

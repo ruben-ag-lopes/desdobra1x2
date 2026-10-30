@@ -221,3 +221,18 @@ export interface ConferirBilheteResponse {
   premio: BilhetePremio | null;
   sequencia: string | null;
 }
+
+export interface UltimoCodigo {
+  game: string;
+  concurso: string;
+  data_sorteio: string;
+  codigos: string[];
+  premios: PrizeTier[];
+}
+
+export interface ConferirCodigoResponse {
+  concurso: string;
+  data_sorteio: string;
+  codigo: string;
+  premio: PrizeTier | null;
+}

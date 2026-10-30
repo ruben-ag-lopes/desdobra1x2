@@ -19,6 +19,28 @@
   --game-accent-soft: #2a1a12;
 }
 
+/* Logo colours of the Santa Casa games, sampled from jogossantacasa.pt's logo sprites */
+.app[data-game="lotaria_classica"] {
+  --game-accent: #ba093e;
+  --game-accent-soft: #2a0f18;
+}
+
+.app[data-game="lotaria_popular"] {
+  --game-accent: #a21984;
+  --game-accent-soft: #250f22;
+}
+
+.app[data-game="m1lhao"] {
+  --game-accent: #f6b815;
+  --game-accent-soft: #2a2410;
+  --game-accent-text: #111827;
+}
+
+.app[data-game="chuva_milionarios"] {
+  --game-accent: #00498d;
+  --game-accent-soft: #0e1d33;
+}
+
 .app[data-game="desportos"] {
   --game-accent: #0f766e;
   --game-accent-soft: #0f2a28;

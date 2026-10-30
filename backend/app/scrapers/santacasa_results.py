@@ -23,6 +23,7 @@ from app.models import (
     PrizeTier,
     TotobolaResultado,
     UltimoBilhete,
+    UltimoCodigo,
     UltimoConcursoTotobola,
     UltimoSorteio,
 )
@@ -41,6 +42,10 @@ _TOTOBOLA_RESULT_URLS = {
 _BILHETE_URLS = {
     "lotaria_classica": "https://www.jogossantacasa.pt/web/SCCartazResult/lotClass",
     "lotaria_popular": "https://www.jogossantacasa.pt/web/SCCartazResult/lotPop",
+}
+_CODIGO_URLS = {
+    "m1lhao": "https://www.jogossantacasa.pt/web/SCCartazResult/m1lhao",
+    "chuva_milionarios": "https://www.jogossantacasa.pt/web/SCCartazResult/cmil",
 }
 # Highest possible main number, so numbers absent from the sample still show up (0 saídas).
 _MAX_NUMBER = {"totoloto": 49, "euromilhoes": 50, "eurodreams": 40}
@@ -167,6 +172,27 @@ def _fetch_ultimo_bilhete(game: str) -> UltimoBilhete:
     )
 
 
+def _fetch_ultimo_codigo(game: str) -> UltimoCodigo:
+    soup = _soup(_CODIGO_URLS[game])
+    concurso, data_sorteio = _draw_info(soup)
+
+    codigos = [li.get_text(strip=True) for li in soup.select("li[id^='code_']")]
+    if not codigos:
+        raise ValueError(f"Could not find the winning codes for {game}")
+
+    premios = []
+    for row in soup.select("div.stripped ul[class*='colum']"):
+        cells = [re.sub(r"\s+", " ", li.get_text(" ")).strip() for li in row.select("li")]
+        if len(cells) not in (3, 4):
+            continue
+        # With 4 cells the table splits Portugal from the total: nome, PT, total, valor.
+        nome, *vencedores, valor = cells
+        pt, total = (_int(vencedores[0]), _int(vencedores[1])) if len(vencedores) == 2 else (None, _int(vencedores[0]))
+        premios.append(PrizeTier(nome=nome, vencedores_portugal=pt, vencedores_total=total, valor=valor))
+
+    return UltimoCodigo(game=game, concurso=concurso, data_sorteio=data_sorteio, codigos=codigos, premios=premios)
+
+
 def _fetch_frequencia(game: str) -> FrequenciaResponse:
     """Number frequency over the recent draws the site's own dropdown lists (see module docstring)."""
     front_page = _soup(_RESULT_URLS[game])
@@ -218,3 +244,7 @@ def get_frequencia(game: str) -> FrequenciaResponse:
 
 def get_ultimo_bilhete(game: str) -> UltimoBilhete:
     return _cache.get_or_set(f"ultimo_bilhete:{game}", lambda: _fetch_ultimo_bilhete(game))
+
+
+def get_ultimo_codigo(game: str) -> UltimoCodigo:
+    return _cache.get_or_set(f"ultimo_codigo:{game}", lambda: _fetch_ultimo_codigo(game))

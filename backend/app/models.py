@@ -309,3 +309,28 @@ class ConferirBilheteResponse(BaseModel):
 
 class SugestaoBilheteResponse(BaseModel):
     bilhete: str
+
+
+class UltimoCodigo(BaseModel):
+    """Winning codes and prize table of a code game (M1lhão, Chuva de Milionários)."""
+
+    game: str
+    concurso: str
+    data_sorteio: date
+    codigos: list[str]  # every winning code; a ticket wins when its code is one of them
+    premios: list[PrizeTier]
+
+
+class ConferirCodigoRequest(BaseModel):
+    codigo: str = Field(min_length=1, max_length=20)
+
+
+class ConferirCodigoResponse(BaseModel):
+    concurso: str
+    data_sorteio: date
+    codigo: str
+    premio: PrizeTier | None = None
+
+
+class SugestaoCodigoResponse(BaseModel):
+    codigo: str
