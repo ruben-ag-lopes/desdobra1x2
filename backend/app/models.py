@@ -33,8 +33,8 @@ class ManualTeamStats(BaseModel):
 
 class MatchInput(BaseModel):
     id: str
-    home_team: str
-    away_team: str
+    home_team: str = Field(max_length=60)  # also used to look up Elo ratings, so it must stay short
+    away_team: str = Field(max_length=60)
     home_country: str
     away_country: str
     competition_code: str | None = None  # football-data.org code, e.g. "PPL"; None => manual only
@@ -288,6 +288,7 @@ class BilhetePremio(BaseModel):
 
 class UltimoBilhete(BaseModel):
     game: str
+    nome_sorteio: str  # e.g. "43.ª - 170 Anos do Caminho de Ferro"
     concurso: str
     data_sorteio: date
     premios: list[BilhetePremio]
@@ -330,7 +331,3 @@ class ConferirCodigoResponse(BaseModel):
     data_sorteio: date
     codigo: str
     premio: PrizeTier | None = None
-
-
-class SugestaoCodigoResponse(BaseModel):
-    codigo: str

@@ -1,11 +1,13 @@
 """Run with: python -m unittest tests.test_engine"""
 
 import unittest
+from unittest.mock import patch
 
 from pydantic import ValidationError
 
 from app.models import DesdobramentoRequest, MatchInput, ResultProbabilities
-from app.services.totobola_engine import _allocate_counts, _apply_double, _double_counts
+from app.scrapers import elo_ratings, team_stats
+from app.services.totobola_engine import _allocate_counts, _apply_double, _double_counts, _elo_probabilities
 
 
 def _probs(home: float, draw: float, away: float) -> ResultProbabilities:
@@ -34,6 +36,43 @@ class AllocationTest(unittest.TestCase):
         counts = _allocate_counts({"1": 0.40, "X": 0.35, "2": 0.25}, 2)
         self.assertEqual(sum(counts.values()), 2)
         self.assertGreater(counts["X"], 0)  # runner-up, must not be shut out
+
+
+class EloHeadToHeadTest(unittest.TestCase):
+    def _probs_with(self, manual_h2h):
+        match = MatchInput(
+            id="m", home_team="A", away_team="B", home_country="", away_country="", home_is_loaned_venue=False,
+            manual_h2h=manual_h2h,
+        )
+        with patch.object(elo_ratings, "get_elo", return_value=1800.0), patch.object(
+            team_stats, "find_team_id", return_value=None
+        ):
+            return _elo_probabilities(match)
+
+    def test_home_wins_in_the_last_meetings_raise_the_home_probability(self):
+        base, wins, losses = self._probs_with([]), self._probs_with(["1"] * 5), self._probs_with(["2"] * 5)
+        self.assertGreater(wins.prob_home, base.prob_home)
+        self.assertLess(losses.prob_home, base.prob_home)
+        self.assertEqual(wins.criteria_breakdown["h2h"]["ajuste_elo"], 30.0)
+
+    def test_a_football_data_error_does_not_fail_the_prediction(self):
+        match = MatchInput(
+            id="m", home_team="A", away_team="B", home_country="", away_country="", home_is_loaned_venue=False,
+            competition_code="PPL",
+        )
+        with patch.object(elo_ratings, "get_elo", return_value=1800.0), patch.object(
+            team_stats, "find_team_id", side_effect=RuntimeError("403 Forbidden")
+        ):
+            result = _elo_probabilities(match)
+        self.assertIsNotNone(result)
+        self.assertNotIn("h2h", result.criteria_breakdown)
+
+    def test_no_meetings_means_no_change_and_no_h2h_entry(self):
+        self.assertNotIn("h2h", self._probs_with([]).criteria_breakdown)
+
+    def test_team_names_are_capped(self):
+        with self.assertRaises(ValidationError):
+            MatchInput(id="m", home_team="x" * 61, away_team="B", home_country="", away_country="")
 
 
 class DoubleTest(unittest.TestCase):

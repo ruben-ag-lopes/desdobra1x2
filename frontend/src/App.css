@@ -19,6 +19,58 @@
   --game-accent-soft: #2a1a12;
 }
 
+/* One number per circle (the Caixas component). Neutral variant for your own bet, so it is not mistaken for a prize. */
+.caixas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.caixa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6em;
+  height: 2.6em;
+  border-radius: 50%;
+  background: #e6edf3;
+  color: #0e1622;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.caixa.extra {
+  background: var(--game-accent);
+  color: var(--game-accent-text, #fff);
+}
+
+/* The input boxes of "Conferir a minha aposta": one box per number */
+.caixas.entrada .caixa {
+  width: 2.6em;
+  padding: 0;
+  border: 2px solid #475569;
+  background: #1e293b;
+  color: #e6edf3;
+  text-align: center;
+  font: inherit;
+  font-weight: 700;
+}
+
+.caixas.entrada .caixa.extra {
+  border-color: var(--game-accent);
+}
+
+.caixas.neutra .caixa {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.caixas.neutra .caixa.extra {
+  background: #475569;
+  color: #e2e8f0;
+}
+
 /* Logo colours of the Santa Casa games, sampled from jogossantacasa.pt's logo sprites */
 .app[data-game="lotaria_classica"] {
   --game-accent: #ba093e;

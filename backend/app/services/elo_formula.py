@@ -3,6 +3,9 @@
 import math
 
 ELO_HOME_ADVANTAGE = 100.0
+# Largest nudge the last meetings between the two sides can give the Elo difference (all wins: +, all losses: -).
+# Not backtested: a small, deliberate weight so history never outweighs the rating gap.
+ELO_H2H_POINTS = 30.0
 
 
 def elo_1x2(dr: float) -> tuple[float, float, float]:

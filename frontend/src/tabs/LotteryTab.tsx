@@ -3,20 +3,17 @@ import { generateLotteryTickets, getFrequencia, getLotteryDraw, getUltimoSorteio
 import type { Draw, FrequenciaResponse, LotteryTicket, UltimoSorteio } from "../api/types";
 import { CopyButton } from "../components/CopyButton";
 import { ConferirAposta } from "../components/ConferirAposta";
+import { Caixas } from "../components/Caixas";
 import { DrawInfo } from "../components/DrawInfo";
+import { formatDate } from "../format";
 
 interface Props {
   game: "totoloto" | "euromilhoes" | "eurodreams";
   title: string;
-  extraLabel: string;
 }
 
 function ticketText(t: LotteryTicket): string {
   return `${t.numbers.join(" ")} + ${t.extra_numbers.join(" ")}`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-PT");
 }
 
 function formatNumber(n: number): string {
@@ -30,9 +27,9 @@ function UltimoSorteioCard({ sorteio }: { sorteio: UltimoSorteio }) {
         Último sorteio: concurso {sorteio.concurso} — {formatDate(sorteio.data_sorteio)}
       </h3>
       <p className="chave">
-        <strong>Chave:</strong> {sorteio.chave.join(" ")}
-        {sorteio.chave_extra.length > 0 && <> + {sorteio.chave_extra.join(" ")}</>}
+        <strong>Chave:</strong>
       </p>
+      <Caixas numeros={sorteio.chave} extra={sorteio.chave_extra} />
       <div className="table-scroll">
         <table className="prize-table">
           <thead>
@@ -102,7 +99,7 @@ function FrequenciaCard({ frequencia }: { frequencia: FrequenciaResponse }) {
   );
 }
 
-export function LotteryTab({ game, title, extraLabel }: Props) {
+export function LotteryTab({ game, title }: Props) {
   const [count, setCount] = useState(1);
   const [tickets, setTickets] = useState<LotteryTicket[]>([]);
   const [loading, setLoading] = useState(false);
@@ -162,8 +159,7 @@ export function LotteryTab({ game, title, extraLabel }: Props) {
       <ul className="tickets">
         {tickets.map((t, i) => (
           <li key={i}>
-            <strong>Números:</strong> {t.numbers.join(", ")} &nbsp;|&nbsp;
-            <strong>{extraLabel}:</strong> {t.extra_numbers.join(", ")}
+            <Caixas numeros={t.numbers} extra={t.extra_numbers} />
             <CopyButton text={ticketText(t)} label="Copiar" />
           </li>
         ))}

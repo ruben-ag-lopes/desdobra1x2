@@ -152,10 +152,6 @@ export function conferirCodigo(game: CodeGame, codigo: string): Promise<Conferir
   });
 }
 
-export function sugerirCodigo(game: CodeGame): Promise<{ codigo: string }> {
-  return request(`/api/lotteries/${game}/sugerir-codigo`, { method: "POST" });
-}
-
 export function getCompeticoes(): Promise<Competition[]> {
   return request("/api/futebol/competicoes");
 }

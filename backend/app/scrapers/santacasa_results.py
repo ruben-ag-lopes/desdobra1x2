@@ -167,8 +167,9 @@ def _fetch_ultimo_bilhete(game: str) -> UltimoBilhete:
     body = header.find_next_sibling("div", class_="betMiddle")
     sequencias = re.findall(r"\d+", body.get_text(" ")) if body else []
 
+    nome_sorteio = soup.select_one("span.totalBet strong").get_text(strip=True)
     return UltimoBilhete(
-        game=game, concurso=concurso, data_sorteio=data_sorteio, premios=premios, sequencias_digitos=digitos, sequencias=sequencias
+        game=game, nome_sorteio=nome_sorteio, concurso=concurso, data_sorteio=data_sorteio, premios=premios, sequencias_digitos=digitos, sequencias=sequencias
     )
 
 

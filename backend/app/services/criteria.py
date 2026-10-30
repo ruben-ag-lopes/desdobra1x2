@@ -4,7 +4,7 @@ from app.models import Criterion, ModelCriteria
 from app.research.importance import CRITERIA
 from app.services import totobola_engine as engine
 from app.services import trained_model
-from app.services.elo_formula import ELO_HOME_ADVANTAGE
+from app.services.elo_formula import ELO_H2H_POINTS, ELO_HOME_ADVANTAGE
 
 # Explanation per model kind; title and data source come from the domain spec.
 _KIND_TEXT = {
@@ -38,6 +38,10 @@ _STATIC = {
         criterios=[
             Criterion(nome="Força das equipas (Elo)", detalhe="Diferença de rating entre as duas equipas."),
             Criterion(nome="Fator casa", detalhe=f"+{ELO_HOME_ADVANTAGE:.0f} pontos Elo para a equipa da casa."),
+            Criterion(
+                nome="Confronto direto",
+                detalhe=f"Até ±{ELO_H2H_POINTS:.0f} pontos Elo, conforme os últimos jogos entre as duas equipas (se houver).",
+            ),
         ],
         dados="eloratings.net (seleções) e clubelo.com (clubes)",
         notas=["O empate é mais provável quanto mais equilibradas forem as equipas."],

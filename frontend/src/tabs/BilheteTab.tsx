@@ -2,32 +2,20 @@ import { useEffect, useState } from "react";
 import { conferirBilhete, getUltimoBilhete, sugerirBilhete, type TicketGame } from "../api/client";
 import type { ConferirBilheteResponse, UltimoBilhete } from "../api/types";
 import { CopyButton } from "../components/CopyButton";
+import { formatDate, mensagemErro } from "../format";
 
 interface Props {
   game: TicketGame;
   title: string;
 }
 
-// The API errors look like "400: {"detail":"..."}": show only the message.
-function mensagemErro(e: unknown): string {
-  const texto = String(e).replace(/^\d+: /, "");
-  try {
-    return JSON.parse(texto).detail ?? texto;
-  } catch {
-    return texto;
-  }
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-PT");
-}
-
 function UltimoBilheteCard({ sorteio }: { sorteio: UltimoBilhete }) {
   return (
     <div className="ultimo-sorteio">
-      <h3>
-        Último sorteio: extração {sorteio.concurso} — {formatDate(sorteio.data_sorteio)}
-      </h3>
+      <h3>Último sorteio: {sorteio.nome_sorteio}</h3>
+      <p className="hint">
+        Extração {sorteio.concurso} — {formatDate(sorteio.data_sorteio)}
+      </p>
       <div className="table-scroll">
         <table className="prize-table">
           <thead>

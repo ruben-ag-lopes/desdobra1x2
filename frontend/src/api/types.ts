@@ -207,6 +207,7 @@ export interface BilhetePremio {
 
 export interface UltimoBilhete {
   game: string;
+  nome_sorteio: string;
   concurso: string;
   data_sorteio: string;
   premios: BilhetePremio[];

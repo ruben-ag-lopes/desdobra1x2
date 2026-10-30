@@ -7,6 +7,7 @@ sometimes down, in which case callers fall back to the criteria-based model).
 import csv
 import io
 import unicodedata
+from urllib.parse import quote
 
 import httpx
 
@@ -114,10 +115,12 @@ def _club_elo(name: str) -> float | None:
 
     def _fetch() -> float | None:
         try:
-            resp = httpx.get(f"http://api.clubelo.com/{query}", timeout=8)
+            # clubelo.com has no https, so refuse a rating that is not plausible instead of trusting the wire.
+            resp = httpx.get(f"http://api.clubelo.com/{quote(query, safe='')}", timeout=8)
             resp.raise_for_status()
             rows = list(csv.DictReader(io.StringIO(resp.text)))
-            return float(rows[-1]["Elo"]) if rows else None
+            elo = float(rows[-1]["Elo"]) if rows else None
+            return elo if elo is not None and 500 <= elo <= 3000 else None
         except Exception:
             return None  # cached too, so a dead service doesn't slow every request
 

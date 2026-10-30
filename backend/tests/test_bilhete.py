@@ -8,6 +8,7 @@ from app.services import bilhete
 
 CLASSICA = UltimoBilhete(
     game="lotaria_classica",
+    nome_sorteio="43.ª - 170 Anos do Caminho de Ferro",
     concurso="043/2026",
     data_sorteio=date(2026, 10, 27),
     premios=[

@@ -4,7 +4,7 @@ from app.models import MatchInput, ResultProbabilities
 from app.scrapers import elo_ratings, loaned_venues, team_stats, uefa_ranking
 from app.scrapers.team_stats import TeamStatsUnavailable
 from app.services import trained_model
-from app.services.elo_formula import ELO_HOME_ADVANTAGE, elo_1x2
+from app.services.elo_formula import ELO_H2H_POINTS, ELO_HOME_ADVANTAGE, elo_1x2
 
 Outcome = Literal["1", "X", "2"]
 
@@ -89,8 +89,27 @@ def _fetch_or_manual_team_strength(match: MatchInput, is_home: bool) -> tuple[fl
     return form, last2_score, standing, breakdown
 
 
+_H2H_FROM_HOME_VIEW = {"W": "1", "D": "X", "L": "2"}
+
+
+def _h2h_results(match: MatchInput) -> list[Outcome]:
+    """Last meetings from the home side's view: the ones the user typed, else football-data.org's (if configured)."""
+    if match.manual_h2h:
+        return match.manual_h2h
+    if not match.competition_code:  # same rule as the form/standings lookups: only league matches use the API's quota
+        return []
+    try:
+        home_id = team_stats.find_team_id(match.home_team)
+        away_id = team_stats.find_team_id(match.away_team)
+        if home_id and away_id:
+            return [_H2H_FROM_HOME_VIEW[r] for r in team_stats.get_head_to_head(home_id, away_id)]
+    except Exception:  # an optional nudge must never fail a prediction, whatever football-data answers
+        pass
+    return []
+
+
 def _elo_probabilities(match: MatchInput) -> ResultProbabilities | None:
-    """1/X/2 probabilities from Elo ratings, or None when either team is unknown."""
+    """1/X/2 probabilities from Elo ratings (nudged by the last meetings), or None when either team is unknown."""
     home_elo = elo_ratings.get_elo(match.home_team)
     away_elo = elo_ratings.get_elo(match.away_team)
     if home_elo is None or away_elo is None:
@@ -101,6 +120,16 @@ def _elo_probabilities(match: MatchInput) -> ResultProbabilities | None:
         is_loaned = loaned_venues.plays_at_loaned_venue(match.home_team)
     dr = home_elo - away_elo + (0 if is_loaned else ELO_HOME_ADVANTAGE)
 
+    breakdown: dict[str, dict[str, float | str]] = {
+        "home": {"elo": round(home_elo), "source": "elo"},
+        "away": {"elo": round(away_elo), "source": "elo"},
+    }
+    h2h = _h2h_results(match)
+    if h2h:
+        ajuste = ELO_H2H_POINTS * 2 * (_h2h_score(h2h) - 0.5)
+        dr += ajuste
+        breakdown["h2h"] = {"jogos": len(h2h), "ajuste_elo": round(ajuste, 1)}
+
     prob_home, prob_draw, prob_away = elo_1x2(dr)
 
     return ResultProbabilities(
@@ -110,10 +139,7 @@ def _elo_probabilities(match: MatchInput) -> ResultProbabilities | None:
         prob_home=round(prob_home, 4),
         prob_draw=round(prob_draw, 4),
         prob_away=round(prob_away, 4),
-        criteria_breakdown={
-            "home": {"elo": round(home_elo), "source": "elo"},
-            "away": {"elo": round(away_elo), "source": "elo"},
-        },
+        criteria_breakdown=breakdown,
         modelo="elo-direto-v1",
     )
 

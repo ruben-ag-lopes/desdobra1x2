@@ -21,10 +21,7 @@ import type {
 } from "../api/types";
 import { isCriteriaCustom, loadCriteria, saveCriteria } from "../criteriaProfile";
 import { OUTCOMES, pickLabel, togglePick } from "../picks";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-PT");
-}
+import { formatDate } from "../format";
 
 function formatNumber(n: number): string {
   return n.toLocaleString("pt-PT");

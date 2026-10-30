@@ -43,12 +43,13 @@ class ConferirCodigoTest(unittest.TestCase):
         result = codigo.conferir_codigo(M1LHAO, "QRX13538")
         self.assertEqual(result.premio.nome, "1.º Prémio")
 
+    def test_winning_code_without_a_prize_table_does_not_crash(self):
+        sem_tabela = M1LHAO.model_copy(update={"premios": []})
+        self.assertIsNone(codigo.conferir_codigo(sem_tabela, "QRX13538").premio)
+
     def test_losing_code(self):
         self.assertIsNone(codigo.conferir_codigo(M1LHAO, "QRX13539").premio)
 
-    def test_suggestion_shape(self):
-        for _ in range(200):
-            self.assertRegex(codigo.sugerir_codigo().codigo, r"^[A-Z]{4}\d{5}$")
 
 
 class FetchUltimoCodigoTest(unittest.TestCase):

@@ -34,6 +34,8 @@ Todas as equipas começam com **1500** pontos. Depois de cada jogo, o vencedor g
 
 Código: `app/research/features.py`, `FeatureState`.
 
+Quando uma equipa não tem histórico para o modelo treinado, usa-se o rating Elo publicado (modelo "Elo atual"). Nesse caso, os últimos jogos entre as duas equipas (os que escreveres ou, nos jogos de liga, os da football-data.org) movem a diferença de Elo até ±30 pontos: todas as vitórias da casa somam 30 e todas as derrotas tiram 30. Este valor é uma escolha simples, não foi validado em jogos passados.
+
 ## 3. Forma recente e confronto direto
 - **Ataque recente:** média de golos marcados nos últimos 8 jogos da equipa, em qualquer campo.
 - **Defesa recente:** média de golos sofridos nos últimos 8 jogos.

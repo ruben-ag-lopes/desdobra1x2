@@ -119,9 +119,9 @@ function App() {
         {active === "totobola_extra" && <TotobolaTab game="totobola_extra" title="Totobola Extra" />}
         {active === "futebol" && <FutebolTab />}
         {active === "desportos" && <SportTab name={OTHER_SPORTS.find((t) => t.id === sport)!.label} />}
-        {active === "totoloto" && <LotteryTab game="totoloto" title="Totoloto" extraLabel="Nº de sorte" />}
-        {active === "euromilhoes" && <LotteryTab game="euromilhoes" title="Euromilhões" extraLabel="Estrelas" />}
-        {active === "eurodreams" && <LotteryTab game="eurodreams" title="EuroDreams" extraLabel="Dream number" />}
+        {active === "totoloto" && <LotteryTab game="totoloto" title="Totoloto" />}
+        {active === "euromilhoes" && <LotteryTab game="euromilhoes" title="Euromilhões" />}
+        {active === "eurodreams" && <LotteryTab game="eurodreams" title="EuroDreams" />}
         {active === "lotaria_classica" && <BilheteTab game="lotaria_classica" title="Lotaria Clássica" />}
         {active === "lotaria_popular" && <BilheteTab game="lotaria_popular" title="Lotaria Popular" />}
         {active === "m1lhao" && <CodigoTab game="m1lhao" title="M1lhão" />}

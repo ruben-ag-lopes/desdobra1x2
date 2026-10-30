@@ -1,25 +1,11 @@
 import { useEffect, useState } from "react";
-import { conferirCodigo, getUltimoCodigo, sugerirCodigo, type CodeGame } from "../api/client";
+import { conferirCodigo, getUltimoCodigo, type CodeGame } from "../api/client";
 import type { ConferirCodigoResponse, UltimoCodigo } from "../api/types";
-import { CopyButton } from "../components/CopyButton";
+import { formatDate, mensagemErro } from "../format";
 
 interface Props {
   game: CodeGame;
   title: string;
-}
-
-// The API errors look like "400: {"detail":"..."}": show only the message.
-function mensagemErro(e: unknown): string {
-  const texto = String(e).replace(/^\d+: /, "");
-  try {
-    return JSON.parse(texto).detail ?? texto;
-  } catch {
-    return texto;
-  }
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-PT");
 }
 
 function UltimoCodigoCard({ sorteio }: { sorteio: UltimoCodigo }) {
@@ -73,13 +59,11 @@ export function CodigoTab({ game, title }: Props) {
   const [resultado, setResultado] = useState<ConferirCodigoResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [sugestao, setSugestao] = useState<string | null>(null);
 
   useEffect(() => {
     setSorteio(null);
     setSorteioError(null);
     setResultado(null);
-    setSugestao(null);
     getUltimoCodigo(game)
       .then(setSorteio)
       .catch((e) => setSorteioError(String(e)));
@@ -96,15 +80,6 @@ export function CodigoTab({ game, title }: Props) {
       setError(mensagemErro(err));
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleSugerir() {
-    setError(null);
-    try {
-      setSugestao((await sugerirCodigo(game)).codigo);
-    } catch (err) {
-      setError(mensagemErro(err));
     }
   }
 
@@ -129,18 +104,6 @@ export function CodigoTab({ game, title }: Props) {
         {resultado && <ResultadoCodigo r={resultado} />}
       </section>
 
-      <section className="conferir">
-        <h3>Sugestão de código</h3>
-        <div className="controls">
-          <button onClick={handleSugerir}>Sugerir código</button>
-        </div>
-        {sugestao && (
-          <p>
-            <strong>{sugestao}</strong> <CopyButton text={sugestao} label="Copiar" />
-          </p>
-        )}
-        <p className="hint">Um código ao acaso: a probabilidade de ganhar é a mesma para qualquer código.</p>
-      </section>
     </div>
   );
 }
